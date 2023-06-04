@@ -19,7 +19,7 @@ def editmode(userid):
             cur.execute(query2)
             db.connection.commit()
             cur.close()
-            flash("Passwrod changed", "success")
+            flash("Password changed", "success")
         except Exception as e:
             flash(str(e), "danger")
     else:
