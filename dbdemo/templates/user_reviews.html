@@ -1,0 +1,59 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if reviews|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Reviews found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Review</th>
+                                    <th>Upload date</th>
+                                    <th>Book</th>
+                                    <th>User</th>
+                                    <th>Score</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in reviews %}
+                                    <tr>
+                                        <td> {{ review.reviewid }}</td>
+                                        <td>
+                                            <div style="max-height: 100px; overflow-y: auto;">{{ review.text }}</div>
+                                        </td>
+                                        <td> {{ review.posting_date }} </td>
+                                        <td> {{ review.bookid }} </td>
+                                        <td> {{ review.userid }} </td>
+                                        <td> {{ review.scale }} </td>
+                                        
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/user/{{userid}}">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

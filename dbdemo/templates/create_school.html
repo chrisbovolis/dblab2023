@@ -1,0 +1,92 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <form class="form-horizontal" name="school-form" method="POST">
+                <!-- hidden_tag returns the form's security metadata -->
+                {{ form.hidden_tag() }}
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.schoolname.label(class = "form-label") }}
+                    <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                    {{ form.schoolname(class = "form-control", placeholder = "Enter school's name", required = False) }}
+                    {% if form.schoolname.errors %}
+                    <ul class = "errors">
+                        {% for error in form.schoolname.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.address.label(class = "form-label") }}
+                    {{ form.address(class = "form-control", placeholder = "Enter address", required = False) }}
+                    {% if form.address.errors %}
+                    <ul class = "errors">
+                        {% for error in form.address.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.city.label(class = "form-label") }}
+                    {{ form.city(class = "form-control", placeholder = "Enter city's name", required = False) }}
+                    {% if form.city.errors %}
+                    <ul class = "errors">
+                        {% for error in form.address.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.tel.label(class = "form-label") }}
+                    {{ form.tel(class = "form-control", placeholder = "Enter telephone number", required = False) }}
+                    {% if form.tel.errors %}
+                    <ul class = "errors">
+                        {% for error in form.tel.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.email.label(class = "form-label") }}
+                    {{ form.email(class = "form-control", placeholder = "Enter email", required = False) }}
+                    {% if form.email.errors %}
+                    <ul class = "errors">
+                        {% for error in form.email.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.director.label(class = "form-label") }}
+                    {{ form.director(class = "form-control", placeholder = "Enter director's name", required = False) }}
+                    {% if form.director.errors %}
+                    <ul class = "errors">
+                        {% for error in form.director.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {{ form.submit(class = "btn btn-primary btn-submit-custom") }}
+            </form>
+    </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/centop">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

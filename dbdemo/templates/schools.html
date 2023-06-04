@@ -1,0 +1,199 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if schools|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Schools found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>School name</th>
+                                    <th>Address</th>
+                                    <th>City</th>
+                                    <th>Tel.</th>
+                                    <th>Email</th>
+                                    <th>Director</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for school in schools %}
+                                    <tr>
+                                        <td> {{ school.schoolid }} </td>
+                                        <td> {{ school.schoolname }} </td>
+                                        <td> {{ school.address }} </td>
+                                        <td> {{ school.city }} </td>
+                                        <td> {{ school.tel }} </td>
+                                        <td> {{ school.email }} </td>
+                                        <td> {{ school.director }} </td>
+                                        <td>
+                                            <a type="button" onclick="setModalFields(this)"
+                                            data-toggle="modal" data-schoolid="{{ school.schoolid }}"
+                                            data-schoolname="{{school.schoolname}}"  data-address= "{{school.address}}"
+                                            data-city="{{school.city}}" data-tel="{{school.tel}}"
+                                            data-email="{{school.email}}" data-director="{{school.director}}"
+                                            data-bs-toggle = "modal"
+                                            data-bs-target="#editModal">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button style = "all: unset; cursor: pointer;" type = "button"
+                                            data-bs-toggle = "modal" data-bs-target = "#deleteModal"
+                                            data-schoolid = "{{ school.schoolid }}" onclick = "setDeleteModalFields(this)">
+                                                <i class = "fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit modal -->
+<div id="editModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit School</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form">
+                    {{ form.hidden_tag() }}
+                    <div style="text-align: center;">
+                        <input type="text" name="id" id="id" readonly>
+                        <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                        {{ form.schoolname(id = "schoolname", required = False) }}
+                        {{ form.address(id = "address", required = False) }}
+                        {{ form.city(id = "city", required = False) }}
+                        {{ form.tel(id = "tel", required = False) }}
+                        {{ form.email(id = "email", required = False) }}
+                        {{ form.director(id = "director", required = False) }}
+                    </div>
+                    <div>
+                        {% if form.schoolname.errors %}
+                        <ul class = "errors">
+                            {% for error in form.schoolname.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.address.errors %}
+                        <ul class = "errors">
+                            {% for error in form.address.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.city.errors %}
+                        <ul class = "errors">
+                            {% for error in form.city.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.tel.errors %}
+                        <ul class = "errors">
+                            {% for error in form.tel.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.email.errors %}
+                        <ul class = "errors">
+                            {% for error in form.email.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.director.errors %}
+                        <ul class = "errors">
+                            {% for error in form.director.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {{ form.submit(class = "btn btn btn-success", form = "modal-form", value = "Update") }}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Delete modal -->
+<div class = "modal fade" id="deleteModal">
+    <div class = "modal-dialog">
+        <div class = "modal-content">
+            <div class = "modal-header">
+                <h5 class = "modal-title" id = "deleteModalLabel">Delete school</h5>
+                <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-label = "Close"></button>
+            </div>
+            <div class = "modal-body">
+                All associated users, books will be deleted too. Are you sure?
+            </div>
+            <div class = "modal-footer">
+                <button type = "button" class = "btn btn-secondary" data-bs-dismiss = "modal">Close</button>
+                <form id = "delete-modal-form">
+                    <input type = "submit" class = "btn btn-danger" value = "Delete">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+
+<script>
+    function setModalFields(row) {
+        //document.getElementById("schoolid").value = row.getAttribute("data-schoolid");
+        document.getElementById("schoolname").value = row.getAttribute("data-schoolname");
+        document.getElementById("address").value = row.getAttribute("data-address");
+        document.getElementById("city").value = row.getAttribute("data-city");
+        document.getElementById("tel").value = row.getAttribute("data-tel");
+        document.getElementById("email").value = row.getAttribute("data-email");
+        document.getElementById("director").value = row.getAttribute("data-director");
+        document.getElementById("modal-form").action = "/schools/update/" + row.getAttribute("data-schoolid");
+        document.getElementById("modal-form").method = "POST";
+        // document.getElementById("submit").addEventListener("click", (e) => {e.preventDefault();});
+        // commented line above would prevent the default behavior of the submit button, that is, sending the
+        // form data with a post request to the determined address and subsequently closing the pop-up
+    }
+
+    function setDeleteModalFields(row) {
+        document.getElementById("delete-modal-form").action = "/schools/delete/" + row.getAttribute("data-schoolid");
+        document.getElementById("delete-modal-form").method = "POST";
+    }
+</script>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/centop">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

@@ -1,0 +1,59 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if user_lendings|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Results found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Starting Date</th>
+                                    <th>Due Date</th>
+                                    <th>Return Date</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for res in user_lendings %}
+                                    <tr>
+                                        <td> {{ res.relid }} </td>
+                                        <td>{{ res.title[0] }}</td>
+                                        <td> {{ res.starting_date}} </td>
+                                        <td> {{ res.due_date}} </td>
+                                        <td> {{ res.return_date}} </td>
+                                        <td>
+    <!-- this might be the cause-->
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/user/{{userid}}">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}
