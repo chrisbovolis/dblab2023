@@ -1,0 +1,503 @@
+DROP TABLE IF EXISTS `schoolunit`;
+CREATE TABLE `schoolunit` (
+    `schoolid` INT NOT NULL AUTO_INCREMENT,
+    `schoolname` VARCHAR(100) NOT NULL,
+    `address` VARCHAR(100) NOT NULL,
+    `city` VARCHAR(100) NOT NULL,
+    `tel` VARCHAR(15) NOT NULL,
+    `email` VARCHAR(50) NOT NULL,
+    `director` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`schoolid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `books`;
+CREATE TABLE `books` (
+  `bookid` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(100) NOT NULL,
+  `publisher` VARCHAR(100) NOT NULL,
+  `ISBN` VARCHAR(100) NOT NULL,
+  `pgnum` INT NOT NULL,
+  `summary` VARCHAR(800) NOT NULL,
+  `img` NVARCHAR(10000),
+  `lang` VARCHAR(40),
+  PRIMARY KEY(`bookid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_book_name` ON `books` (`title`);
+
+DROP TABLE IF EXISTS `bookinlib`;
+CREATE TABLE `bookinlib` (
+  `relid` INT NOT NULL AUTO_INCREMENT,
+  `cpavail` INT NOT NULL,
+  `cptotal` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  `schoolid` INT NOT NULL,
+  PRIMARY KEY(`relid`),
+  UNIQUE (`bookid`,`schoolid`),
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`),
+  CHECK(`cpavail` >= 0),
+  CHECK(`cpavail` <= `cptotal`),
+  CONSTRAINT `schoolid` FOREIGN KEY (`schoolid`) REFERENCES `schoolunit` (`schoolid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `bookid` FOREIGN KEY (`bookid`) REFERENCES `books` (`bookid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `writer`;
+CREATE TABLE `writer` (
+  `wrid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  PRIMARY KEY(`wrid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_writer_name` ON `writer` (`first_name`);
+
+
+DROP TABLE IF EXISTS `bookswriter`;
+CREATE TABLE `bookswriter` (
+  `bookwrid` INT NOT NULL AUTO_INCREMENT,
+  `wrid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`wrid`),
+  FOREIGN KEY (`wrid`) REFERENCES `writer`(`wrid`)
+  ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY(`bookwrid`),
+  FOREIGN KEY (`bookid`) REFERENCES `books` (`bookid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `schoolid` INT NOT NULL,
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `status` VARCHAR(20) DEFAULT 'other' CHECK (`status` IN ('teacher', 'student', 'other')),
+  `birthdate` DATE,
+  `num_lent` INT DEFAULT 0,
+  `num_reserved` INT DEFAULT 0,
+  `punctual` BOOL DEFAULT true,
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`) ON DELETE CASCADE ON    
+  UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+CREATE INDEX `idx_users_status` ON `user` (`status`);
+
+
+DROP TABLE IF EXISTS `operator`;
+CREATE TABLE `operator` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `schoolid` INT NOT NULL UNIQUE,
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `main_operator`;
+CREATE TABLE `main_operator` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `lending`;
+CREATE TABLE `lending` (
+  `lendid` INT NOT NULL AUTO_INCREMENT,
+  `starting_date` DATE DEFAULT CURRENT_TIMESTAMP,
+  `due_date` DATE DEFAULT TIMESTAMPADD(DAY, 7, NOW()),
+  `userid` INT NOT NULL,
+  `relid` INT NOT NULL,
+  `return_date` DATE DEFAULT NULL,
+  `returned` BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) 
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`relid`) REFERENCES `bookinlib`(`relid`) 
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY(`lendid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `keyword`;
+CREATE TABLE `keyword` (
+  `kwid` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100),
+  PRIMARY KEY(`kwid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `bookskeywords`;
+CREATE TABLE `bookskeywords` (
+  `bookskwid` INT NOT NULL AUTO_INCREMENT,
+  `kwid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`kwid`),
+  FOREIGN KEY (`kwid`) REFERENCES `keyword`(`kwid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`bookskwid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `category`;
+CREATE TABLE `category` (
+  `catid` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100),
+  PRIMARY KEY(`catid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_category_name` ON `category` (`name`);
+
+
+
+DROP TABLE IF EXISTS `bookscategory`;
+CREATE TABLE `bookscategory` (
+  `bookscatid` INT NOT NULL AUTO_INCREMENT,
+  `catid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`catid`),
+  FOREIGN KEY (`catid`) REFERENCES `category`(`catid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`bookscatid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `review`;
+CREATE TABLE `review` (
+  `reviewid` INT NOT NULL AUTO_INCREMENT,
+  `text` VARCHAR(800) NOT NULL,
+  `posting_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `bookid` INT NOT NULL,
+  `userid` INT NOT NULL,
+  `scale` INT DEFAULT 3,
+  CHECK (scale > 0 AND scale < 6),
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`reviewid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `reservation`;
+CREATE TABLE `reservation` (
+  `resid` INT NOT NULL AUTO_INCREMENT,
+  `start_date` TIMESTAMP NULL DEFAULT NULL,
+  `due_date` TIMESTAMP NULL DEFAULT NULL,
+  `reservation_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `userid` INT NOT NULL,
+  `relid` INT NOT NULL,
+  `active` BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`relid`) REFERENCES `bookinlib`(`relid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`resid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP VIEW IF EXISTS `writersgenre`;
+CREATE VIEW writersgenre AS
+SELECT DISTINCT w.wrid,w.first_name, w.last_name 
+FROM writer w 
+JOIN bookswriter bw ON w.wrid = bw.wrid 
+JOIN books b ON bw.bookid = b.bookid 
+JOIN ( 
+SELECT bc.bookid 
+FROM bookscategory bc 
+JOIN category c USE INDEX (idx_category_name) ON bc.catid = c.catid 
+WHERE c.name = '{}'
+) AS sub ON b.bookid = sub.bookid;
+
+
+
+DROP VIEW IF EXISTS `teachersgenre`;
+CREATE VIEW teachersgenre AS
+SELECT DISTINCT u.userid, u.first_name, u.last_name 
+FROM user u USE INDEX (idx_users_status) 
+INNER JOIN lending l  ON l.userid = u.userid
+INNER JOIN bookinlib bl ON bl.relid = l.relid 
+INNER JOIN books b ON b.bookid = bl.bookid 
+INNER JOIN bookscategory bcat ON bcat.bookid = b.bookid 
+INNER JOIN category c USE INDEX (idx_category_name) ON c.catid = bcat.catid 
+WHERE c.name = '{}' 
+  AND u.status = 'teacher' 
+  AND l.starting_date >= DATE_FORMAT(CURDATE(), '%Y-01-01') 
+  AND l.starting_date < DATE_FORMAT(CURDATE() + INTERVAL 1 YEAR, '%Y-01-01');
+
+
+
+DROP VIEW IF EXISTS `under_forty`;
+
+CREATE VIEW under_forty AS
+SELECT u.userid, u.first_name, u.last_name, COUNT(l.userid) AS lending_count 
+FROM user u USE INDEX (idx_users_status)
+ INNER JOIN lending l ON l.userid = u.userid
+ WHERE u.status = 'teacher
+' AND u.birthdate >= DATE_SUB(CURDATE(), INTERVAL 40 YEAR)
+ GROUP BY u.userid, u.first_name, u.last_name
+ ORDER BY lending_count DESC;
+
+
+
+DROP VIEW IF EXISTS `unused_writers`;
+CREATE VIEW unused_writers AS
+SELECT w.wrid,w.first_name, w.last_name 
+FROM writer w 
+WHERE w.wrid NOT IN ( 
+  SELECT bw.wrid 
+  FROM bookswriter bw 
+  INNER JOIN bookinlib bl ON bl.bookid = bw.bookid 
+  INNER JOIN lending l ON bl.relid = l.relid);
+
+
+
+
+DROP VIEW IF EXISTS `same_num_lent_operators`;
+CREATE VIEW same_num_lent_operators AS
+SELECT o1.userid,o1.first_name, o1.last_name, o1.numlent 
+FROM ( 
+SELECT o.userid,o.first_name, o.last_name, COUNT(l.relid) AS numlent 
+FROM operator o 
+INNER JOIN bookinlib b ON b.schoolid = o.schoolid 
+INNER JOIN lending l ON l.relid = b.relid 
+GROUP BY o.first_name, o.last_name 
+HAVING COUNT(*)>=20
+) AS o1 
+INNER JOIN ( 
+SELECT numlent 
+FROM ( SELECT o.first_name, o.last_name,
+COUNT(l.relid) AS numlent FROM operator o 
+INNER JOIN bookinlib b ON b.schoolid = o.schoolid 
+INNER JOIN lending l ON l.relid = b.relid 
+GROUP BY o.first_name, o.last_name HAVING COUNT(*) >= 20 ) 
+AS o2 GROUP BY numlent HAVING COUNT(*) > 1 ) 
+AS o2 ON o1.numlent = o2.numlent;
+
+
+
+DROP VIEW IF EXISTS `top_genres`;
+CREATE VIEW top_genres (genre1, genre2, appearances )AS
+SELECT c1.name as genre1, c2.name as genre2,
+COUNT(*) as appearances 
+FROM category c1
+INNER JOIN bookscategory bc1 ON bc1.catid=c1.catid 
+INNER JOIN bookscategory bc2 ON bc2.bookid=bc1.bookid 
+INNER JOIN category c2 ON bc2.catid = c2.catid
+INNER JOIN bookinlib b ON b.bookid = bc1.bookid
+INNER JOIN lending l ON l.relid = b.relid 
+WHERE c1.name<c2.name 
+GROUP BY c1.name,c2.name 
+ORDER BY appearances DESC LIMIT 3;
+
+
+
+
+DROP VIEW IF EXISTS `lazy_writers`;
+CREATE VIEW lazy_writers AS
+SELECT w.wrid,w.first_name, w.last_name,
+COALESCE(writer_counts.book_count, 0) AS book_count
+FROM writer w
+LEFT JOIN ( 
+  SELECT bw.wrid, COUNT(bw.bookid) AS book_count 
+  FROM bookswriter bw
+  GROUP BY bw.wrid
+) AS writer_counts ON w.wrid = writer_counts.wrid 
+WHERE (writer_counts.book_count <= (
+  SELECT MAX(counts)
+    FROM ( 
+      SELECT COUNT(*) AS counts
+      FROM bookswriter 
+      GROUP BY wrid ORDER BY counts DESC 
+      LIMIT 6 )
+AS subquery) - 5) 
+OR (w.wrid NOT IN (SELECT DISTINCT wrid FROM bookswriter));
+
+
+
+
+DELIMITER //
+
+CREATE TRIGGER reduce_cpavail_trigger
+AFTER INSERT ON lending
+FOR EACH ROW
+BEGIN
+    UPDATE bookinlib
+    SET cpavail = cpavail - 1
+    WHERE relid = NEW.relid;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER increase_cpavail_trigger
+AFTER UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        UPDATE bookinlib
+        SET cpavail = cpavail + 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER decrease_numlent_trigger
+AFTER UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        UPDATE user 
+        SET num_lent = num_lent - 1
+        WHERE userid = NEW.userid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+ 
+DELIMITER //
+
+CREATE TRIGGER increase_numlent_trigger
+AFTER INSERT ON lending
+FOR EACH ROW
+BEGIN
+    UPDATE user
+    SET num_lent = num_lent + 1
+    WHERE userid = NEW.userid;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER book_avail_trigger_res
+BEFORE INSERT ON reservation
+FOR EACH ROW
+BEGIN
+    DECLARE cpavail_value INT;
+
+    SELECT cpavail INTO cpavail_value
+    FROM bookinlib
+    WHERE relid = NEW.relid;
+
+    IF (cpavail_value > 0) THEN
+        SET NEW.active = true,
+            NEW.start_date = CURRENT_TIMESTAMP,
+            NEW.due_date = TIMESTAMPADD(DAY, 7, NOW());
+
+        UPDATE bookinlib
+        SET cpavail = cpavail - 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER decrease_numreserved_trigger_res
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+    UPDATE user 
+    SET num_reserved = num_reserved - 1
+        WHERE userid = OLD.userid;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER decrease_cpavail_trigger
+AFTER UPDATE ON reservation
+FOR EACH ROW
+BEGIN
+    IF NEW.active = 1 AND OLD.active = 0 THEN
+        UPDATE bookinlib
+        SET cpavail = cpavail - 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER increase_cpavail_trigger_res
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+    IF OLD.active = true THEN
+        UPDATE bookinlib 
+        SET cpavail = cpavail + 1
+        WHERE relid = OLD.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER increase_numreserved_trigger
+AFTER INSERT ON reservation
+FOR EACH ROW
+BEGIN
+    UPDATE user
+    SET num_reserved = num_reserved + 1
+    WHERE userid = NEW.userid;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER update_return_date_trigger
+BEFORE UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        SET NEW.return_date = CURDATE();
+    END IF;
+END //
+
+DELIMITER ;

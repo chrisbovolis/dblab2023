@@ -1,0 +1,1719 @@
+DROP TABLE IF EXISTS `schoolunit`;
+CREATE TABLE `schoolunit` (
+    `schoolid` INT NOT NULL AUTO_INCREMENT,
+    `schoolname` VARCHAR(100) NOT NULL,
+    `address` VARCHAR(100) NOT NULL,
+    `city` VARCHAR(100) NOT NULL,
+    `tel` VARCHAR(15) NOT NULL,
+    `email` VARCHAR(50) NOT NULL,
+    `director` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`schoolid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `books`;
+CREATE TABLE `books` (
+  `bookid` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(100) NOT NULL,
+  `publisher` VARCHAR(100) NOT NULL,
+  `ISBN` VARCHAR(100) NOT NULL,
+  `pgnum` INT NOT NULL,
+  `summary` VARCHAR(800) NOT NULL,
+  `img` NVARCHAR(10000),
+  `lang` VARCHAR(40),
+  PRIMARY KEY(`bookid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_book_name` ON `books` (`title`);
+
+DROP TABLE IF EXISTS `bookinlib`;
+CREATE TABLE `bookinlib` (
+  `relid` INT NOT NULL AUTO_INCREMENT,
+  `cpavail` INT NOT NULL,
+  `cptotal` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  `schoolid` INT NOT NULL,
+  PRIMARY KEY(`relid`),
+  UNIQUE (`bookid`,`schoolid`),
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`),
+  CHECK(`cpavail` >= 0),
+  CHECK(`cpavail` <= `cptotal`),
+  CONSTRAINT `schoolid` FOREIGN KEY (`schoolid`) REFERENCES `schoolunit` (`schoolid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `bookid` FOREIGN KEY (`bookid`) REFERENCES `books` (`bookid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `writer`;
+CREATE TABLE `writer` (
+  `wrid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  PRIMARY KEY(`wrid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_writer_name` ON `writer` (`first_name`);
+
+
+DROP TABLE IF EXISTS `bookswriter`;
+CREATE TABLE `bookswriter` (
+  `bookwrid` INT NOT NULL AUTO_INCREMENT,
+  `wrid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`wrid`),
+  FOREIGN KEY (`wrid`) REFERENCES `writer`(`wrid`)
+  ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY(`bookwrid`),
+  FOREIGN KEY (`bookid`) REFERENCES `books` (`bookid`)        
+  ON DELETE CASCADE ON UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `schoolid` INT NOT NULL,
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `status` VARCHAR(20) DEFAULT 'other' CHECK (`status` IN ('teacher', 'student', 'other')),
+  `birthdate` DATE,
+  `num_lent` INT DEFAULT 0,
+  `num_reserved` INT DEFAULT 0,
+  `punctual` BOOL DEFAULT true,
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`) ON DELETE CASCADE ON    
+  UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+CREATE INDEX `idx_users_status` ON `user` (`status`);
+
+
+DROP TABLE IF EXISTS `operator`;
+CREATE TABLE `operator` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `schoolid` INT NOT NULL UNIQUE,
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`),
+  FOREIGN KEY (`schoolid`) REFERENCES `schoolunit`(`schoolid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `main_operator`;
+CREATE TABLE `main_operator` (
+  `userid` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(40) NOT NULL UNIQUE CHECK (LENGTH(`username`) >= 5),
+  `password` VARCHAR(40) NOT NULL CHECK (LENGTH(`password`) >= 10),
+  `email` VARCHAR(50) NOT NULL UNIQUE,
+  PRIMARY KEY(`userid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `lending`;
+CREATE TABLE `lending` (
+  `lendid` INT NOT NULL AUTO_INCREMENT,
+  `starting_date` DATE DEFAULT CURRENT_TIMESTAMP,
+  `due_date` DATE DEFAULT TIMESTAMPADD(DAY, 7, NOW()),
+  `userid` INT NOT NULL,
+  `relid` INT NOT NULL,
+  `return_date` DATE DEFAULT NULL,
+  `returned` BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) 
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`relid`) REFERENCES `bookinlib`(`relid`) 
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY(`lendid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `keyword`;
+CREATE TABLE `keyword` (
+  `kwid` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100),
+  PRIMARY KEY(`kwid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `bookskeywords`;
+CREATE TABLE `bookskeywords` (
+  `bookskwid` INT NOT NULL AUTO_INCREMENT,
+  `kwid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`kwid`),
+  FOREIGN KEY (`kwid`) REFERENCES `keyword`(`kwid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`bookskwid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP TABLE IF EXISTS `category`;
+CREATE TABLE `category` (
+  `catid` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100),
+  PRIMARY KEY(`catid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE INDEX `idx_category_name` ON `category` (`name`);
+
+
+
+DROP TABLE IF EXISTS `bookscategory`;
+CREATE TABLE `bookscategory` (
+  `bookscatid` INT NOT NULL AUTO_INCREMENT,
+  `catid` INT NOT NULL,
+  `bookid` INT NOT NULL,
+  UNIQUE (`bookid`,`catid`),
+  FOREIGN KEY (`catid`) REFERENCES `category`(`catid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`bookscatid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+DROP TABLE IF EXISTS `review`;
+CREATE TABLE `review` (
+  `reviewid` INT NOT NULL AUTO_INCREMENT,
+  `text` VARCHAR(800) NOT NULL,
+  `posting_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `bookid` INT NOT NULL,
+  `userid` INT NOT NULL,
+  `scale` INT DEFAULT 3,
+  CHECK (scale > 0 AND scale < 6),
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`bookid`) REFERENCES `books`(`bookid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`reviewid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `reservation`;
+CREATE TABLE `reservation` (
+  `resid` INT NOT NULL AUTO_INCREMENT,
+  `start_date` TIMESTAMP NULL DEFAULT NULL,
+  `due_date` TIMESTAMP NULL DEFAULT NULL,
+  `reservation_date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `userid` INT NOT NULL,
+  `relid` INT NOT NULL,
+  `active` BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (`userid`) REFERENCES `user`(`userid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  FOREIGN KEY (`relid`) REFERENCES `bookinlib`(`relid`) ON DELETE CASCADE ON     
+  UPDATE CASCADE,
+  PRIMARY KEY(`resid`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
+DROP VIEW IF EXISTS `writersgenre`;
+CREATE VIEW writersgenre AS
+SELECT DISTINCT w.wrid,w.first_name, w.last_name 
+FROM writer w 
+JOIN bookswriter bw ON w.wrid = bw.wrid 
+JOIN books b ON bw.bookid = b.bookid 
+JOIN ( 
+SELECT bc.bookid 
+FROM bookscategory bc 
+JOIN category c USE INDEX (idx_category_name) ON bc.catid = c.catid 
+WHERE c.name = '{}'
+) AS sub ON b.bookid = sub.bookid;
+
+
+
+DROP VIEW IF EXISTS `teachersgenre`;
+CREATE VIEW teachersgenre AS
+SELECT DISTINCT u.userid, u.first_name, u.last_name 
+FROM user u USE INDEX (idx_users_status) 
+INNER JOIN lending l  ON l.userid = u.userid
+INNER JOIN bookinlib bl ON bl.relid = l.relid 
+INNER JOIN books b ON b.bookid = bl.bookid 
+INNER JOIN bookscategory bcat ON bcat.bookid = b.bookid 
+INNER JOIN category c USE INDEX (idx_category_name) ON c.catid = bcat.catid 
+WHERE c.name = '{}' 
+  AND u.status = 'teacher' 
+  AND l.starting_date >= DATE_FORMAT(CURDATE(), '%Y-01-01') 
+  AND l.starting_date < DATE_FORMAT(CURDATE() + INTERVAL 1 YEAR, '%Y-01-01');
+
+
+
+DROP VIEW IF EXISTS `under_forty`;
+
+CREATE VIEW under_forty AS
+SELECT u.userid, u.first_name, u.last_name, COUNT(l.userid) AS lending_count 
+FROM user u USE INDEX (idx_users_status)
+ INNER JOIN lending l ON l.userid = u.userid
+ WHERE u.status = 'teacher
+' AND u.birthdate >= DATE_SUB(CURDATE(), INTERVAL 40 YEAR)
+ GROUP BY u.userid, u.first_name, u.last_name
+ ORDER BY lending_count DESC;
+
+
+
+DROP VIEW IF EXISTS `unused_writers`;
+CREATE VIEW unused_writers AS
+SELECT w.wrid,w.first_name, w.last_name 
+FROM writer w 
+WHERE w.wrid NOT IN ( 
+  SELECT bw.wrid 
+  FROM bookswriter bw 
+  INNER JOIN bookinlib bl ON bl.bookid = bw.bookid 
+  INNER JOIN lending l ON bl.relid = l.relid);
+
+
+
+
+DROP VIEW IF EXISTS `same_num_lent_operators`;
+CREATE VIEW same_num_lent_operators AS
+SELECT o1.userid,o1.first_name, o1.last_name, o1.numlent 
+FROM ( 
+SELECT o.userid,o.first_name, o.last_name, COUNT(l.relid) AS numlent 
+FROM operator o 
+INNER JOIN bookinlib b ON b.schoolid = o.schoolid 
+INNER JOIN lending l ON l.relid = b.relid 
+GROUP BY o.first_name, o.last_name 
+HAVING COUNT(*)>=20
+) AS o1 
+INNER JOIN ( 
+SELECT numlent 
+FROM ( SELECT o.first_name, o.last_name,
+COUNT(l.relid) AS numlent FROM operator o 
+INNER JOIN bookinlib b ON b.schoolid = o.schoolid 
+INNER JOIN lending l ON l.relid = b.relid 
+GROUP BY o.first_name, o.last_name HAVING COUNT(*) >= 20 ) 
+AS o2 GROUP BY numlent HAVING COUNT(*) > 1 ) 
+AS o2 ON o1.numlent = o2.numlent;
+
+
+
+DROP VIEW IF EXISTS `top_genres`;
+CREATE VIEW top_genres (genre1, genre2, appearances )AS
+SELECT c1.name as genre1, c2.name as genre2,
+COUNT(*) as appearances 
+FROM category c1
+INNER JOIN bookscategory bc1 ON bc1.catid=c1.catid 
+INNER JOIN bookscategory bc2 ON bc2.bookid=bc1.bookid 
+INNER JOIN category c2 ON bc2.catid = c2.catid
+INNER JOIN bookinlib b ON b.bookid = bc1.bookid
+INNER JOIN lending l ON l.relid = b.relid 
+WHERE c1.name<c2.name 
+GROUP BY c1.name,c2.name 
+ORDER BY appearances DESC LIMIT 3;
+
+
+
+
+DROP VIEW IF EXISTS `lazy_writers`;
+CREATE VIEW lazy_writers AS
+SELECT w.wrid,w.first_name, w.last_name,
+COALESCE(writer_counts.book_count, 0) AS book_count
+FROM writer w
+LEFT JOIN ( 
+  SELECT bw.wrid, COUNT(bw.bookid) AS book_count 
+  FROM bookswriter bw
+  GROUP BY bw.wrid
+) AS writer_counts ON w.wrid = writer_counts.wrid 
+WHERE (writer_counts.book_count <= (
+  SELECT MAX(counts)
+    FROM ( 
+      SELECT COUNT(*) AS counts
+      FROM bookswriter 
+      GROUP BY wrid ORDER BY counts DESC 
+      LIMIT 6 )
+AS subquery) - 5) 
+OR (w.wrid NOT IN (SELECT DISTINCT wrid FROM bookswriter));
+
+
+
+
+DELIMITER //
+
+CREATE TRIGGER reduce_cpavail_trigger
+AFTER INSERT ON lending
+FOR EACH ROW
+BEGIN
+    UPDATE bookinlib
+    SET cpavail = cpavail - 1
+    WHERE relid = NEW.relid;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER increase_cpavail_trigger
+AFTER UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        UPDATE bookinlib
+        SET cpavail = cpavail + 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER decrease_numlent_trigger
+AFTER UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        UPDATE user 
+        SET num_lent = num_lent - 1
+        WHERE userid = NEW.userid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+ 
+DELIMITER //
+
+CREATE TRIGGER increase_numlent_trigger
+AFTER INSERT ON lending
+FOR EACH ROW
+BEGIN
+    UPDATE user
+    SET num_lent = num_lent + 1
+    WHERE userid = NEW.userid;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER book_avail_trigger_res
+BEFORE INSERT ON reservation
+FOR EACH ROW
+BEGIN
+    DECLARE cpavail_value INT;
+
+    SELECT cpavail INTO cpavail_value
+    FROM bookinlib
+    WHERE relid = NEW.relid;
+
+    IF (cpavail_value > 0) THEN
+        SET NEW.active = true,
+            NEW.start_date = CURRENT_TIMESTAMP,
+            NEW.due_date = TIMESTAMPADD(DAY, 7, NOW());
+
+        UPDATE bookinlib
+        SET cpavail = cpavail - 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+DELIMITER //
+
+CREATE TRIGGER decrease_numreserved_trigger_res
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+    UPDATE user 
+    SET num_reserved = num_reserved - 1
+        WHERE userid = OLD.userid;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER decrease_cpavail_trigger
+AFTER UPDATE ON reservation
+FOR EACH ROW
+BEGIN
+    IF NEW.active = 1 AND OLD.active = 0 THEN
+        UPDATE bookinlib
+        SET cpavail = cpavail - 1
+        WHERE relid = NEW.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER increase_cpavail_trigger_res
+AFTER DELETE ON reservation
+FOR EACH ROW
+BEGIN
+    IF OLD.active = true THEN
+        UPDATE bookinlib 
+        SET cpavail = cpavail + 1
+        WHERE relid = OLD.relid;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER increase_numreserved_trigger
+AFTER INSERT ON reservation
+FOR EACH ROW
+BEGIN
+    UPDATE user
+    SET num_reserved = num_reserved + 1
+    WHERE userid = NEW.userid;
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER update_return_date_trigger
+BEFORE UPDATE ON lending
+FOR EACH ROW
+BEGIN
+    IF NEW.returned = TRUE AND OLD.returned = FALSE THEN
+        SET NEW.return_date = CURDATE();
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+
+
+
+INSERT INTO schoolunit VALUE (null,'3o Aspropurgou','Fokionos 58','Aspropurgos','2103527854','asprop3@gmail.com','Giannis Karavasilis' );
+INSERT INTO schoolunit VALUE (null,'Makrixoriou','Eleutherias 42','Makrixori','2101567893','makrixori@gmail.com','Maria Xaramanta' );
+INSERT INTO schoolunit VALUE (null,'5o Kallitheas','Kritis 42','Kallithea','2104055632','kallithea5@gmail.com','Dimitra Saranti' );
+
+
+INSERT INTO operator VALUES (null,  'Anastasios', 'Bavelis'  , 'anasbav' , 'kodikos1234' , 1, 'anasbav@gmail.com');
+INSERT INTO operator VALUES (null,  'Spuridwnas', 'Saris'  , 'spursaris' , 'kodikos1234' , 2, 'spursaris@gmail.com');
+INSERT INTO operator VALUES (null,  'Thanasis',  'Gewrgiou'  , 'thangewr' , 'kodikos1234' , 3, 'thangewr@gmail.com');
+
+INSERT INTO main_operator VALUES (null,  'George', 'Anastasios'  , 'george' , 'kodikos1234' , 'georgeanas@gmail.com' );
+
+
+INSERT INTO user VALUE (null,'George','Williams','georgewill42',1,'kodikos1234','teacher','1980-11-11',0,0,true, 'georgewill42@gmail.com');
+INSERT INTO user VALUE (null,'Bob','Ross','rossbob51',1,'kodikos1234','teacher','1993-5-3',0,0,true, 'rossbob51@gmail.com');
+INSERT INTO user VALUE (null,'Euterpi','Stamou','eustamou32',1,'kodikos1234','teacher','1984-2-7',0,0,true, 'eustamou32@gmail.com');
+INSERT INTO user VALUE (null,'Gregore','Williams','greewill42',1,'kodikos1234','teacher','1985-11-11',0,0,true, 'gregorwill42@gmail.com');
+INSERT INTO user VALUE (null,'Bobob','Ross','rosesbob451',1,'kodikos1234','teacher','1993-5-3',0,0,true, 'rossbob451@gmail.com');
+INSERT INTO user VALUE (null,'Eusterpi','Stasmou','eusstamou432',1,'kodikos1234','teacher','1984-2-7',0,0,true, 'eustamou332@gmail.com');
+INSERT INTO user VALUES (null, 'George', 'Ioannou', 'georgee42', 1, 'kodikos1234', 'student', '2006-11-11', 0, 0, true, 'georvge42@gmail.com');
+INSERT INTO user VALUES (null, 'Dimitra', 'Paragewrgiou', 'dimpapp' ,1, 'kodikos1234', 'student', '2007-05-03', 0, 0, true, 'dimvpap@gmail.com');
+INSERT INTO user VALUES (null, 'Nasos', 'Papandreou', 'nasospdap', 1, 'kodikos1234', 'student', '2006-09-12', 0, 0, true, 'nasvospap@gmail.com');
+INSERT INTO user VALUES (null, 'Thanos', 'Stefanou', 'thancfstef', 1, 'kodikos1234', 'student', '2006-09-12', 0, 0, true, 'thanstvef@gmail.com');
+INSERT INTO user VALUES (null, 'Katerina', 'Stefanidou', 'kavterdinaki', 1, 'kodikos1234', 'student', '2006-09-12', 0, 0, true, 'katerinaki@gmail.com');
+INSERT INTO user VALUES (null, 'Stelios', 'Andreou', 'stelavvndreou', 1, 'kodikos1234', 'student', '2006-09-09', 0, 0, true, 'stelanvdreou@gmail.com');
+INSERT INTO user VALUES (null, 'Xristina', 'Xrhstou', 'xristivvna21', 1, 'kodikos1234', 'student', '2006-09-21', 0, 0, true, 'xrisvtina21@gmail.com');
+INSERT INTO user VALUES (null, 'Anastashs', 'Eleutheriou', 'anavvselefther', 1, 'kodikos1234', 'student', '2006-06-18', 0, 0, true, 'anaselefther@gmail.com');
+INSERT INTO user VALUES (null, 'Kuriakh', 'Stergiou', 'kurvstver', 1, 'kodikos1234', 'student', '2006-04-10', 0, 0, true, 'kurstevrs@gmail.com');
+INSERT INTO user VALUES (null, 'Nikos', 'Kuprou', 'nikovskuvprou', 1, 'kodikos1234', 'student', '2014-02-18', 0, 0, true, 'nikosvkuprous@gmail.com');
+
+INSERT INTO user VALUE (null,'Despoina','Papaioannou','desppap14',2,'kodikos1234','teacher','1990-6-5',0,0,true, 'desppap14@gmail.com');
+INSERT INTO user VALUE (null,'Kostantinos','Papadopoulos','kostpapa67',2,'kodikos1234','teacher','1987-8-6',0,0,true, 'kostpapa67@gmail.com');
+INSERT INTO user VALUE (null,'Hasan','Oikonomou','hasanoik51',2,'kodikos1234','teacher','2000-4-12',0,0,true, 'hasanoik51@gmail.com');
+INSERT INTO user VALUE (null,'Maria','Ioannou','maryioan88',2,'kodikos1234','teacher','1973-7-29',0,0,true, 'maryioan88@gmail.com');
+INSERT INTO user VALUE (null,'Desspoina','Papaioannou','desppap114',2,'kodikos1234','teacher','1990-6-5',0,0,true, 'desppap114@gmail.com');
+INSERT INTO user VALUE (null,'Kostantinos','Papoulos','kostpapa467',2,'kodikos1234','teacher','1987-8-6',0,0,true, 'kostpapa367@gmail.com');
+INSERT INTO user VALUE (null,'Maria','Ioananou','maryioan388',2,'kodikos1234','teacher','1973-7-29',0,0,true, 'maryioan288@gmail.com');
+INSERT INTO user VALUE (null,'Basilis' , 'Rokanos', 'basilisroka' ,2, 'kodikos1234'  , 'student' , '2005-5-3' ,0,0,true, 'basilrok@gmail.com');
+INSERT INTO user VALUE (null,'Eutuxia' , 'Stefanou' , 'eutustef' ,2, 'kodikos1234',  'student' , '2006-2-7' ,0,0,true, 'eutustef@gmail.com');
+INSERT INTO user VALUE (null,'Dionyshs'  , 'Papaioannou','dionppap14',2,'kodikos1234', 'student' ,  '2007-6-5' ,0,0,true, 'dionppap14@gmail.com');
+INSERT INTO user VALUE (null,'Kostantinos','Papastratou' , 'kostapapa67',2,'kodikos1234', 'student',  '2008-8-6' ,0,0,true, 'kostpapas67@gmail.com');
+INSERT INTO user VALUE (null,'Hasan','Oikonomou','hasaanoik51',2,'kodikos1234', 'student',   '2009-4-12',0,0,true, 'hasanoiks51@gmail.com');
+INSERT INTO user VALUE (null,'Maria','Ioannou','maryioann88',2,'kodikos1234' ,   'student', '2010-7-29',0,0,true, 'maryioans88@gmail.com');
+INSERT INTO user VALUE (null,'Elisavet','Lampropoulou','lampreliss93' , 2, 'kodikos1234', 'student' , '2010-12-25',0,0,true, 'lampreliss93@gmail.com');
+INSERT INTO user VALUE (null,'Paraskeui','Kostopoulou','paraskosst17' ,2, 'kodikos1234',  'student', '2011-4-17',0,0,true, 'paraskosst17@gmail.com');
+INSERT INTO user VALUE (null,'Kalliopi','Xarmanta','kalxarms51', 2 ,'kodikos1234', 'student',   '2012-5-29',0,0,true, 'kalxarms51@gmail.com');
+INSERT INTO user VALUE (null,'Dimitris','Diakos','dimdiaks51', 2 ,'kodikos1234', 'student',  '2007-6-26',0,0,true, 'dimdiaks51@gmail.com');
+
+
+INSERT INTO user VALUE (null,'Elisavet','Lampropoulou','lamprelis93',3,'kodikos1234','teacher','1994-12-25',0,0,true, 'lamprelis93@gmail.com');
+INSERT INTO user VALUE (null,'Paraskeui','Kostopoulou','paraskost17',3,'kodikos1234','teacher','1978-4-17',0,0,true, 'paraskost17@gmail.com');
+INSERT INTO user VALUE (null,'Kalliopi','Xarmanta','kalxarm51',3,'kodikos1234','teacher','1980-5-29',0,0,true, 'kalxarm51@gmail.com');
+INSERT INTO user VALUE (null,'Dimitris','Diakos','dimdiak51',3,'kodikos1234','teacher','1987-6-26',0,0,true, 'dimdiak51@gmail.com');
+INSERT INTO user VALUE (null,'Elisavet','Lamprolou','lamprelis493',3,'kodikos1234','teacher','1994-12-25',0,0,true, 'lamprelis933@gmail.com');
+INSERT INTO user VALUE (null,'Paraskeui','Kopoulou','paraskos417',3,'kodikos1234','teacher','1978-4-17',0,0,true, 'paraskost317@gmail.com');
+INSERT INTO user VALUE (null,'Kalliopi','Xarta','kalxarm451',3,'kodikos15234','teacher','1980-5-29',0,0,true, 'kalxarm351@gmail.com');
+INSERT INTO user VALUE (null,'Dimitris','Diaskos','dimdiak351',3,'kodikos1234','teacher','1987-6-26',0,0,true, 'dimdiak251@gmail.com');
+INSERT INTO user VALUE (null,'Georgia' , 'Williams','georcrefgewill42', 3 ,'kodikos1234', 'student', '2015-11-11',0,0,true, 'georgvfewills42@gmail.com');
+INSERT INTO user VALUE (null,'Bob','Ross','rossbvferob51', 3 ,'kodikos1234', 'student',  '2013-5-3' ,0,0,true, 'rossbovfb51@gmail.com');
+INSERT INTO user VALUE (null,'Euterpi','Stamou','eustcfecamou32', 3 ,'kodikos1234', 'student',  '2013-2-7' ,0,0,true, 'eusbfbftamous32@gmail.com');
+INSERT INTO user VALUE (null,'Despoina','Papaioannou','despfrdpap14', 3 ,'kodikos1234', 'student',  '2012-6-5' ,0,0,true, 'despfpaps14@gmail.com');
+INSERT INTO user VALUE (null,'Kostantinos','Papadopoulos','kostpafpa67', 3 ,'kodikos1234', 'student',  '2011-8-6' ,0,0,true, 'kostfpapas67@gmail.com');
+INSERT INTO user VALUE (null,'Hasan','Oikonomou','hasanodik51', 3 ,'kodikos1234', 'student'  ,'2010-4-12',0,0,true, 'hasdanoiks51@gmail.com');
+INSERT INTO user VALUE (null,'Maria','Ioannou','margyioan88', 3 ,'kodikos1234', 'student',  '2013-7-29',0,0,true, 'maryiodans88@gmail.com');
+INSERT INTO user VALUE (null,'Elisavet','Lampropoulou','lamprelifgs93', 3 ,'kodikos1234', 'student',  '2012-12-25',0,0,true, 'lamprdeliss93@gmail.com');
+INSERT INTO user VALUE (null,'Paraskeui','Kostopoulou','parasgkdost17', 3 ,'kodikos1234', 'student',  '2011-4-17',0,0,true, 'parasskosst17@gmail.com');
+INSERT INTO user VALUE (null,'Kalliopi','Xarmanta','kalxdarm51', 3 ,'kodikos1234','student',   '2010-5-29',0,0,true, 'kalxarmdm51@gmail.com');
+INSERT INTO user VALUE (null,'Dimitris','Diakos','dimvdiak51', 3 ,'kodikos1234', 'student',  '2010-6-26',0,0,true, 'dimddiaks51@gmail.com');
+
+
+
+INSERT INTO category VALUE (null,'drama');
+INSERT INTO category VALUE (null,'novel');
+INSERT INTO category VALUE (null,'fiction');
+INSERT INTO category VALUE (null,'comedy');
+INSERT INTO category VALUE (null,'horror');
+INSERT INTO category VALUE (null,'romance');
+INSERT INTO category VALUE (null,'action and adventure');
+INSERT INTO category VALUE (null,'classic');
+INSERT INTO category VALUE (null,'science fiction');
+INSERT INTO category VALUE (null,'history');
+INSERT INTO category VALUE (null,'science');
+INSERT INTO category VALUE (null,'technology');
+INSERT INTO category VALUE (null,'cooking');
+INSERT INTO category VALUE (null,'children book');
+INSERT INTO category VALUE (null,'comic');
+INSERT INTO category VALUE (null,'graphic novel');
+INSERT INTO category VALUE (null,'mystery');
+INSERT INTO category VALUE (null,'fantasy');
+INSERT INTO category VALUE (null,'historical fiction');
+INSERT INTO category VALUE (null,'literary fiction');
+INSERT INTO category VALUE (null,'short story');
+INSERT INTO category VALUE (null,'thriller');
+INSERT INTO category VALUE (null,'memoir');
+INSERT INTO category VALUE (null,'poetry');
+INSERT INTO category VALUE (null,'self help');
+INSERT INTO category VALUE (null,'true crime');
+INSERT INTO category VALUE (null,'economics');
+
+
+
+
+INSERT INTO writer VALUE (null, 'J. R. R.', 'Tolkien');
+INSERT INTO writer VALUE (null, 'Nicholas', 'Sparks');
+INSERT INTO writer VALUE (null, 'Charles', 'Dickens');
+INSERT INTO writer VALUE (null, 'Stephen', 'King');
+INSERT INTO writer VALUE (null, 'Agatha', 'Christie'); 
+INSERT INTO writer VALUE (null, 'Edgar Allan', 'Poe');
+INSERT INTO writer VALUE (null, 'J. R.', 'Toln');
+INSERT INTO writer VALUE (null, 'Nilas', 'Spas');
+INSERT INTO writer VALUE (null, 'Chas', 'Dickens');
+INSERT INTO writer VALUE (null, 'Steen', 'Kanng');
+INSERT INTO writer VALUE (null, 'Agena', 'Chatie'); 
+INSERT INTO writer VALUE (null, 'Edan', 'Pioe');
+INSERT INTO writer VALUE (null, 'R. R.', 'Toen');
+INSERT INTO writer VALUE (null, 'Nicolas', 'Spaks');
+INSERT INTO writer VALUE (null, 'Cherles', 'Dics');
+INSERT INTO writer VALUE (null, 'Stethen', 'Kideng');
+INSERT INTO writer VALUE (null, 'Agatera', 'Christine'); 
+INSERT INTO writer VALUE (null, 'Ederr Allan', 'Pone');
+
+
+
+
+INSERT INTO books VALUES (null, 'The Notebook', 'Warner Books', 9780446520805, 214, 'The Notebook is a 1996 novel by Nicholas Sparks. The story centers on the relationship between Noah Calhoun and Allie Nelson. Spanning over five decades, their love endures an uncertain beginning, the onset and conclusion of World War II, the death of one child, and Allie''s eventual diagnosis of Alzheimer''s disease.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Oliver Twist', 'Simon & Schuster', 9780192815910, 392, 'The story follows the adventures of Oliver Twist (played by John Howard Davies), an orphan in 19th-century England, who encounters a number of setbacks in his quest to find security and happiness. He lives in a harshly run orphanage until being sold as an apprentice to a cruel undertaker.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Great Expectations', 'Chapman & Hall', 9780140430035, 544, 'Great Expectations follows the childhood and young adult years of Pip a blacksmith’s apprentice in a country village. He suddenly comes into a large fortune (his great expectations) from a mysterious benefactor and moves to London where he enters high society.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'A Tale of Two Cities', 'Chapman & Hall', 9780141439600, 304, 'The novel tells the story of the French Doctor Manette, his 18-year-long imprisonment in the Bastille in Paris, and his release to live in London with his daughter Lucie whom he had never met. The story is set against the conditions that led up to the French Revolution and the Reign of Terror.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Pickwick Papers', 'Chapman & Hall', 9780195462456, 700, 'The Pickwick Club sends Mr. Pickwick and a group of friends to travel across England and to report back on the interesting things they find. In the course of their travels, they repeatedly encounter the friendly but disreputable Mr. Jingle, who becomes a continual source of trouble for all who know him.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'A Christmas Carol', 'Chapman & Hall', 9780425123348, 64, 'A Christmas Carol recounts the story of Ebenezer Scrooge, an elderly miser who is visited by the ghost of his former business partner Jacob Marley and the spirits of Christmas Past, Present and Yet to Come. After their visits, Scrooge is transformed into a kinder, gentler man. A Christmas Carol.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'The Notek', 'Warners Books', 978044643805, 214, 'The Notek is a 1996 novel by Nicholas Sparks. The story centers on the relationship between Noah Calhoun and Allie Nelson. Spanning over five decades, their love endures an uncertain beginning, the onset and conclusion of World War II, the death of one child, and Allie''s eventual diagnosis of Alzheimer''s disease.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Oliver Test', 'Simon & Schuster', 9780192846910, 392, 'The story follows the adventures of Oliver Twist (played by John Howard Davies), an orphan in 19th-century England, who encounters a number of setbacks in his quest to find security and happiness. He lives in a harshly run orphanage until being sold as an apprentice to a cruel undertaker.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Expectations', 'Chapman & Hall', 9780140432035, 544, 'Great Expectations follows the childhood and young adult years of Pip a blacksmith’s apprentice in a country village. He suddenly comes into a large fortune (his great expectations) from a mysterious benefactor and moves to London where he enters high society.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Two Cities', 'Chapman & Hall', 9730431439600, 304, 'The novel tells the story of the French Doctor Manette, his 18-year-long imprisonment in the Bastille in Paris, and his release to live in London with his daughter Lucie whom he had never met. The story is set against the conditions that led up to the French Revolution and the Reign of Terror.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Papers', 'Chapman & Hall', 9783295462456, 700, 'The Pickwick Club sends Mr. Pickwick and a group of friends to travel across England and to report back on the interesting things they find. In the course of their travels, they repeatedly encounter the friendly but disreputable Mr. Jingle, who becomes a continual source of trouble for all who know him.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'A Christmas Train', 'Chapman & Hall', 9782325123348, 64, 'A Christmas Carol recounts the story of Ebenezer Scrooge, an elderly miser who is visited by the ghost of his former business partner Jacob Marley and the spirits of Christmas Past, Present and Yet to Come. After their visits, Scrooge is transformed into a kinder, gentler man. A Christmas Carol.', 1, 'English');
+
+
+INSERT INTO books VALUES (null, 'Note', 'War Books', 9780434543805, 214, 'The Note is a 1996 novel by Nicholas Sparks. The story centers on the relationship between Noah Calhoun and Allie Nelson. Spanning over five decades, their love endures an uncertain beginning, the onset and conclusion of World War II, the death of one child, and Allie''s eventual diagnosis of Alzheimer''s disease.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Test', 'Simon', 9780192349910, 392, 'The story follows the adventures of Oliver Twist (played by John Howard Davies), an orphan in 19th-century England, who encounters a number of setbacks in his quest to find security and happiness. He lives in a harshly run orphanage until being sold as an apprentice to a cruel undertaker.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Αctions', 'Hall', 978034832035, 544, 'Great Expectations follows the childhood and young adult years of Pip a blacksmith’s apprentice in a country village. He suddenly comes into a large fortune (his great expectations) from a mysterious benefactor and moves to London where he enters high society.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Cities', 'Chapman', 9730431435600, 304, 'The novel tells the story of the French Doctor Manette, his 18-year-long imprisonment in the Bastille in Paris, and his release to live in London with his daughter Lucie whom he had never met. The story is set against the conditions that led up to the French Revolution and the Reign of Terror.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Papers', 'Chapman & Hall', 9739295462456, 700, 'The Pickwick Club sends Mr. Pickwick and a group of friends to travel across England and to report back on the interesting things they find. In the course of their travels, they repeatedly encounter the friendly but disreputable Mr. Jingle, who becomes a continual source of trouble for all who know him.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Train', 'Chapman & Hall', 9782295123348, 64, 'A Christmas Carol recounts the story of Ebenezer Scrooge, an elderly miser who is visited by the ghost of his former business partner Jacob Marley and the spirits of Christmas Past, Present and Yet to Come. After their visits, Scrooge is transformed into a kinder, gentler man. A Christmas Carol.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Green Mile', 'Gallery Books', 9740743233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Fairy Tale', 'Scribner', 9788404027710, 608, 'Fairy Tale is a dark fantasy novel by American author Stephen King, published on September 6, 2022 by Scribner. The novel follows Charlie Reade, a 17-year-old who inherits keys to a hidden, otherworldly realm, and finds himself leading the battle between forces of good and evil.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Shining', 'Doubleday', 9740307743657, 447, 'The Shining is a 1977 horror novel by American author Stephen King. It tells the story of Jack, Wendy, and Danny Torrance during an isolated winter in which Jack becomes the caretaker of Colorado’s Overlook Hotel. It deals with themes of parenthood, isolation, addiction, and the bonds of family.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'It', 'Simon & Schuster', 9781544707861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Doctor Sleep', 'Scribner', 9708401354809, 531, 'Struggling with alcoholism, Dan Torrance remains traumatized by the sinister events that occurred at the Overlook Hotel when he was a child. His hope for a peaceful existence soon becomes shattered when he meets Abra, a teen who shares his extrasensory gift of the "shine." Together, they form an unlikely alliance to battle the True Knot, a cult whose members try to feed off the shine of innocents to become immortal.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Stand', ' Doubleday', 9780007743688, 823, 'The Stand is an American post-apocalyptic fantasy television miniseries, based on the 1978 novel of the same name by Stephen King and a remake to the 1994 adaptation. The plot centers on a pandemic resulting from a mishap at a military biological research station which allows the escape of a lethal strain of influenza.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Carrie', ' Doubleday', 9380345806307, 256, 'The story of misfit high-school girl, Carrie White, who gradually discovers that she has telekinetic powers. Repressed by a domineering, ultra-religious mother and tormented by her peers at school, her efforts to fit in lead to a dramatic confrontation during the senior prom.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Mile', 'Gallery Books', 9740113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Tale', 'Scribner', 9788401127710, 608, 'Fairy Tale is a dark fantasy novel by American author Stephen King, published on September 6, 2022 by Scribner. The novel follows Charlie Reade, a 17-year-old who inherits keys to a hidden, otherworldly realm, and finds himself leading the battle between forces of good and evil.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Shining', 'Doubleday', 9793307743657, 447, 'The Shining is a 1977 horror novel by American author Stephen King. It tells the story of Jack, Wendy, and Danny Torrance during an isolated winter in which Jack becomes the caretaker of Colorado’s Overlook Hotel. It deals with themes of parenthood, isolation, addiction, and the bonds of family.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'It matters' , 'Simon & Schuster', 9781548707861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Sleep', 'Scribner', 9708403854809, 531, 'Struggling with alcoholism, Dan Torrance remains traumatized by the sinister events that occurred at the Overlook Hotel when he was a child. His hope for a peaceful existence soon becomes shattered when he meets Abra, a teen who shares his extrasensory gift of the "shine." Together, they form an unlikely alliance to battle the True Knot, a cult whose members try to feed off the shine of innocents to become immortal.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Standard' , ' Doubleday', 9780447743688, 823, 'The Stand is an American post-apocalyptic fantasy television miniseries, based on the 1978 novel of the same name by Stephen King and a remake to the 1994 adaptation. The plot centers on a pandemic resulting from a mishap at a military biological research station which allows the escape of a lethal strain of influenza.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Car', ' Doubleday', 9380349406307, 256, 'The story of misfit high-school girl, Carrie White, who gradually discovers that she has telekinetic powers. Repressed by a domineering, ultra-religious mother and tormented by her peers at school, her efforts to fit in lead to a dramatic confrontation during the senior prom.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Mile', 'Gallery Books', 9742113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Tal', 'Scribner', 9788801127710, 608, 'Fairy Tale is a dark fantasy novel by American author Stephen King, published on September 6, 2022 by Scribner. The novel follows Charlie Reade, a 17-year-old who inherits keys to a hidden, otherworldly realm, and finds himself leading the battle between forces of good and evil.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Shine' , 'Doubleday', 9733307743657, 447, 'The Shining is a 1977 horror novel by American author Stephen King. It tells the story of Jack, Wendy, and Danny Torrance during an isolated winter in which Jack becomes the caretaker of Colorado’s Overlook Hotel. It deals with themes of parenthood, isolation, addiction, and the bonds of family.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'It Is'  , 'Simon & Schuster', 9781448707861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Slip', 'Scribner', 9708401334809, 531, 'Struggling with alcoholism, Dan Torrance remains traumatized by the sinister events that occurred at the Overlook Hotel when he was a child. His hope for a peaceful existence soon becomes shattered when he meets Abra, a teen who shares his extrasensory gift of the "shine." Together, they form an unlikely alliance to battle the True Knot, a cult whose members try to feed off the shine of innocents to become immortal.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Standard' , ' Doubleday', 9785447743688, 823, 'The Stand is an American post-apocalyptic fantasy television miniseries, based on the 1978 novel of the same name by Stephen King and a remake to the 1994 adaptation. The plot centers on a pandemic resulting from a mishap at a military biological research station which allows the escape of a lethal strain of influenza.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Cars' , ' Doubleday', 9380549406307, 256, 'The story of misfit high-school girl, Carrie White, who gradually discovers that she has telekinetic powers. Repressed by a domineering, ultra-religious mother and tormented by her peers at school, her efforts to fit in lead to a dramatic confrontation during the senior prom.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Murder on the Orient Express', 'Collins Crime Club', 9780062073501, 256, 'An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Death on the Nile', 'Mondadori', 9788804680420, 235, 'Synopsis. In World War I, the young Hercule Poirot devises a strategy to help the Allied forces reclaim land against the Central Powers, however he is unable to stop his captain’s death from a booby trap, which mutilates Poirot’s face.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'The Murder of Roger Ackroyd', 'William Collins, Sons', 9780062073563, 312, 'James Sheppard, lives with his older unmarried sister Caroline in the country village of Kings Abbot on the outskirts of London. As the local physician with an active practice, Dr. Sheppard becomes emmeshed in a mysterious suicide and murder and the ensuing investigations into them over a nine-day period.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Mysterious Affair at Styles', 'John Lane', 9780525565109, 296, 'Poirot, a Belgian refugee of the Great War, is settling in England near the home of Emily Inglethorp, who helped him to his new life. His friend Hastings arrives as a guest at her home. When Mrs Inglethorp is murdered, Poirot uses his detective skills to solve the mystery.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The A.B.C. Murders', 'Collins Crime Club', 9780062073587, 256, 'The ABC Murders tells about the adventure of Hercule Poirot, a private detective, in solving a serial murder case. He is accompanied by his friend named Captain Hastings. The story starts when Poirot shows a letter from the murderer to Hastings. The killer challenge Poirot to stop him.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Murder', 'Collins Crime Club', 9111162013501, 256, 'An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Death', 'Mondadori', 9788114680420, 235, 'Synopsis. In World War I, the young Hercule Poirot devises a strategy to help the Allied forces reclaim land against the Central Powers, however he is unable to stop his captain’s death from a booby trap, which mutilates Poirot’s face.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'The Murder', 'William Collins, Sons', 9780061073563, 312, 'James Sheppard, lives with his older unmarried sister Caroline in the country village of Kings Abbot on the outskirts of London. As the local physician with an active practice, Dr. Sheppard becomes emmeshed in a mysterious suicide and murder and the ensuing investigations into them over a nine-day period.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Mysterious Affair', 'John Lane', 9710525565109, 296, 'Poirot, a Belgian refugee of the Great War, is settling in England near the home of Emily Inglethorp, who helped him to his new life. His friend Hastings arrives as a guest at her home. When Mrs Inglethorp is murdered, Poirot uses his detective skills to solve the mystery.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Murders', 'Collins Crime Club', 9781062079987, 256, 'The ABC Murders tells about the adventure of Hercule Poirot, a private detective, in solving a serial murder case. He is accompanied by his friend named Captain Hastings. The story starts when Poirot shows a letter from the murderer to Hastings. The killer challenge Poirot to stop him.', 1, 'English');
+
+
+INSERT INTO books VALUES (null, 'House', 'William', 92800673532, 256, 'A wealthy Greek businessman is found dead at his London home… The Leonides were one big happy family living in a sprawling, ramshackle mansion. That was until the head of the household, Aristide, was murdered with a fatal barbiturate injection. Suspicion naturally falls on the old man’s young widow, fifty years his junior. But the murderer has reckoned without the tenacity of Charles Hayward fiance of the late millionaire’s granddaughter...', 1, 'English');
+
+INSERT INTO books VALUES (null, 'Crooked House', 'William Morrow Paperbacks', 9780062073532, 256, 'A wealthy Greek businessman is found dead at his London home… The Leonides were one big happy family living in a sprawling, ramshackle mansion. That was until the head of the household, Aristide, was murdered with a fatal barbiturate injection. Suspicion naturally falls on the old man’s young widow, fifty years his junior. But the murderer has reckoned without the tenacity of Charles Hayward, fiance of the late millionaire’s granddaughter...', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Heart', 'James Russell Lowell', 978014174269, 8, 'The Tell-Tale Heart" is the story of an unnamed narrator who murders an old man. From the beginning of the story, the narrator claims to be sane. It soon becomes apparent, however, that the narrator is not sane and is focused on killing an old man', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Black', 'United States Saturday Post',978164561757, 14, 'It is the story of an alcoholic who is driven by his addiction. He tortures and kills his cat, Pluto. Then, a stray cat that looks almost exactly like the cat he murdered except for a gallows mark on its chest follows him home and drives him to become even more irrationally violent.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'Book', 'Warner Books', 9780123520805, 214, 'The Notebook is a 1996 novel by Nicholas Sparks. The story centers on the relationship between Noah Calhoun and Allie Nelson. Spanning over five decades, their love endures an uncertain beginning, the onset and conclusion of World War II, the death of one child, and Allie''s eventual diagnosis of Alzheimer''s disease.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Oliver', 'Simon & Schuster', 9780192896310, 392, 'The story follows the adventures of Oliver Twist (played by John Howard Davies), an orphan in 19th-century England, who encounters a number of setbacks in his quest to find security and happiness. He lives in a harshly run orphanage until being sold as an apprentice to a cruel undertaker.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Great Actions', 'Chapman & Hall', 9780730430035, 544, 'Great Expectations follows the childhood and young adult years of Pip a blacksmith’s apprentice in a country village. He suddenly comes into a large fortune (his great expectations) from a mysterious benefactor and moves to London where he enters high society.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Two Cities', 'Chapman & Hall', 9074141439600, 304, 'The novel tells the story of the French Doctor Manette, his 18-year-long imprisonment in the Bastille in Paris, and his release to live in London with his daughter Lucie whom he had never met. The story is set against the conditions that led up to the French Revolution and the Reign of Terror.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Paper', 'Chapman & Hall', 9780030462456, 700, 'The Pickwick Club sends Mr. Pickwick and a group of friends to travel across England and to report back on the interesting things they find. In the course of their travels, they repeatedly encounter the friendly but disreputable Mr. Jingle, who becomes a continual source of trouble for all who know him.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Green', 'Gallery Books', 9740743200006, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Fairy', 'Scribner', 9708404027710, 608, 'Fairy Tale is a dark fantasy novel by American author Stephen King, published on September 6, 2022 by Scribner. The novel follows Charlie Reade, a 17-year-old who inherits keys to a hidden, otherworldly realm, and finds himself leading the battle between forces of good and evil.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Shining', 'Doubleday', 9740306643657, 447, 'The Shining is a 1977 horror novel by American author Stephen King. It tells the story of Jack, Wendy, and Danny Torrance during an isolated winter in which Jack becomes the caretaker of Colorado’s Overlook Hotel. It deals with themes of parenthood, isolation, addiction, and the bonds of family.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Iteration' , 'Simon & Schuster', 9781544707861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null,  'The Iteration' , 'Simon & Schuster', 9744544707861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Doctor', 'Scribner', 9708401394809, 531, 'Struggling with alcoholism, Dan Torrance remains traumatized by the sinister events that occurred at the Overlook Hotel when he was a child. His hope for a peaceful existence soon becomes shattered when he meets Abra, a teen who shares his extrasensory gift of the "shine." Together, they form an unlikely alliance to battle the True Knot, a cult whose members try to feed off the shine of innocents to become immortal.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Twist', 'Simon & Schuster', 9720192815910, 392, 'The story follows the adventures of Oliver Twist (played by John Howard Davies), an orphan in 19th-century England, who encounters a number of setbacks in his quest to find security and happiness. He lives in a harshly run orphanage until being sold as an apprentice to a cruel undertaker.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Expect', 'Chapman & Hall', 9780119430035, 544, 'Great Expectations follows the childhood and young adult years of Pip a blacksmith’s apprentice in a country village. He suddenly comes into a large fortune (his great expectations) from a mysterious benefactor and moves to London where he enters high society.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Two', 'Chapman & Hall', 9780141439930, 304, 'The novel tells the story of the French Doctor Manette, his 18-year-long imprisonment in the Bastille in Paris, and his release to live in London with his daughter Lucie whom he had never met. The story is set against the conditions that led up to the French Revolution and the Reign of Terror.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Pickwick', 'Chapman & Hall', 9780522462456, 700, 'The Pickwick Club sends Mr. Pickwick and a group of friends to travel across England and to report back on the interesting things they find. In the course of their travels, they repeatedly encounter the friendly but disreputable Mr. Jingle, who becomes a continual source of trouble for all who know him.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Christmas', 'Chapman & Hall', 9725425123348, 64, 'A Christmas Carol recounts the story of Ebenezer Scrooge, an elderly miser who is visited by the ghost of his former business partner Jacob Marley and the spirits of Christmas Past, Present and Yet to Come. After their visits, Scrooge is transformed into a kinder, gentler man. A Christmas Carol.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Orient Express', 'Collins Crime Club', 9780062113501, 256, 'An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Nile', 'Mondadori', 9788804920420, 235, 'Synopsis. In World War I, the young Hercule Poirot devises a strategy to help the Allied forces reclaim land against the Central Powers, however he is unable to stop his captain’s death from a booby trap, which mutilates Poirot’s face.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'Roger Ackroyd', 'William Collins, Sons', 9780062993563, 312, 'James Sheppard, lives with his older unmarried sister Caroline in the country village of Kings Abbot on the outskirts of London. As the local physician with an active practice, Dr. Sheppard becomes emmeshed in a mysterious suicide and murder and the ensuing investigations into them over a nine-day period.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Mysterious Affair', 'John Lane', 9780955565109, 296, 'Poirot, a Belgian refugee of the Great War, is settling in England near the home of Emily Inglethorp, who helped him to his new life. His friend Hastings arrives as a guest at her home. When Mrs Inglethorp is murdered, Poirot uses his detective skills to solve the mystery.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The A.B.C.', 'Collins Crime Club', 9789562019587, 256, 'The ABC Murders tells about the adventure of Hercule Poirot, a private detective, in solving a serial murder case. He is accompanied by his friend named Captain Hastings. The story starts when Poirot shows a letter from the murderer to Hastings. The killer challenge Poirot to stop him.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Cats' , ' Doubleday', 9380777906307, 256, 'The story of misfit high-school girl, Carrie White, who gradually discovers that she has telekinetic powers. Repressed by a domineering, ultra-religious mother and tormented by her peers at school, her efforts to fit in lead to a dramatic confrontation during the senior prom.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Express', 'Collins Crime Club', 978019273503, 256, 'An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Tree', 'Mondadori', 9788834680420, 235, 'Synopsis. In World War I, the young Hercule Poirot devises a strategy to help the Allied forces reclaim land against the Central Powers, however he is unable to stop his captain’s death from a booby trap, which mutilates Poirot’s face.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'The Roger', 'William Collins, Sons', 9782062073563, 312, 'James Sheppard, lives with his older unmarried sister Caroline in the country village of Kings Abbot on the outskirts of London. As the local physician with an active practice, Dr. Sheppard becomes emmeshed in a mysterious suicide and murder and the ensuing investigations into them over a nine-day period.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Affair', 'John Lane', 9780125565109, 296, 'Poirot, a Belgian refugee of the Great War, is settling in England near the home of Emily Inglethorp, who helped him to his new life. His friend Hastings arrives as a guest at her home. When Mrs Inglethorp is murdered, Poirot uses his detective skills to solve the mystery.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The E.F.G Murders', 'Collins Crime Club', 9780062073587, 256, 'The ABC Murders tells about the adventure of Hercule Poirot, a private detective, in solving a serial murder case. He is accompanied by his friend named Captain Hastings. The story starts when Poirot shows a letter from the murderer to Hastings. The killer challenge Poirot to stop him.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Murders' , 'Collins Crime Club', 9780075553501, 256, 'An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Deaths' ,  'Mondadori', 9788114681320, 235, 'Synopsis. In World War I, the young Hercule Poirot devises a strategy to help the Allied forces reclaim land against the Central Powers, however he is unable to stop his captain’s death from a booby trap, which mutilates Poirot’s face.', 1, 'English');
+
+INSERT INTO books VALUES (null, 'The Diets' , 'William Collins, Sons', 9780061073563, 312, 'James Sheppard, lives with his older unmarried sister Caroline in the country village of Kings Abbot on the outskirts of London. As the local physician with an active practice, Dr. Sheppard becomes emmeshed in a mysterious suicide and murder and the ensuing investigations into them over a nine-day period.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Mysterous', 'John Lane', 9710521565109, 296, 'Poirot, a Belgian refugee of the Great War, is settling in England near the home of Emily Inglethorp, who helped him to his new life. His friend Hastings arrives as a guest at her home. When Mrs Inglethorp is murdered, Poirot uses his detective skills to solve the mystery.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Trains' , 'Chapman & Hall', 9782129123348, 64, 'A Christmas Carol recounts the story of Ebenezer Scrooge, an elderly miser who is visited by the ghost of his former business partner Jacob Marley and the spirits of Christmas Past, Present and Yet to Come. After their visits, Scrooge is transformed into a kinder, gentler man. A Christmas Carol.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Red Mile', 'Gallery Books', 9723743233606, 432, 'It tells the story of death row supervisor Paul Edgecombes encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Blue Mile', 'Gallery Books', 9723743233606, 432, 'It tells the story of death row supervisor Paul Edgecombes encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Yellow Mile', 'Gallery Books', 9773743233106, 432, 'It tells the story of death row supervisor Paul Edgecombes encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Purple Mile', 'Gallery Books', 9173743133606, 432, 'It tells the story of death row supervisor Paul Edgecombes encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Pink Mile', 'Gallery Books', 9773863233606, 432, 'It tells the story of death row supervisor Paul Edgecombes encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Fairies' , 'Scribe', 9780014007710, 608, 'Fairy Tale is a dark fantasy novel by American author Stephen King, published on September 6, 2022 by Scribner. The novel follows Charlie Reade, a 17-year-old who inherits keys to a hidden, otherworldly realm, and finds himself leading the battle between forces of good and evil.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'The Shining', 'Doubleday', 9712307743657, 447, 'The Shining is a 1977 horror novel by American author Stephen King. It tells the story of Jack, Wendy, and Danny Torrance during an isolated winter in which Jack becomes the caretaker of Colorado’s Overlook Hotel. It deals with themes of parenthood, isolation, addiction, and the bonds of family.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'I Love It', 'Simon & Schuster', 9781540007861, 1138, 'The story follows the experiences of seven children as they are terrorized by an evil entity that exploits the fears of its victims to disguise itself while hunting its prey. "It" primarily appears in the form of Pennywise the Dancing Clown to attract its preferred prey of young children.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Doctors Hospital' , 'Scribner', 9708601354009, 531, 'Struggling with alcoholism, Dan Torrance remains traumatized by the sinister events that occurred at the Overlook Hotel when he was a child. His hope for a peaceful existence soon becomes shattered when he meets Abra, a teen who shares his extrasensory gift of the "shine." Together, they form an unlikely alliance to battle the True Knot, a cult whose members try to feed off the shine of innocents to become immortal.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'The Shine' ,  ' Doubleday', 9780007743688, 823, 'The Stand is an American post-apocalyptic fantasy television miniseries, based on the 1978 novel of the same name by Stephen King and a remake to the 1994 adaptation. The plot centers on a pandemic resulting from a mishap at a military biological research station which allows the escape of a lethal strain of influenza.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Cells' , ' Doubleday', 9380345806307, 256, 'The story of misfit high-school girl, Carrie White, who gradually discovers that she has telekinetic powers. Repressed by a domineering, ultra-religious mother and tormented by her peers at school, her efforts to fit in lead to a dramatic confrontation during the senior prom.', 1, 'English');
+
+
+INSERT INTO books VALUE (null, 'Pink' , 'Gallery Books', 9750113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Orange'  , 'Gallery Books', 9730113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Blue' , 'Gallery Books', 9720113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+INSERT INTO books VALUE (null, 'Red' , 'Gallery Books', 9710113233606, 432, 'It tells the story of death row supervisor Paul Edgecombe’s encounter with John Coffey, an unusual inmate who displays inexplicable healing and empathetic abilities. The serial novel was originally released in six volumes before being republished as a single-volume work. The book is an example of magical realism.', 1, 'English');
+
+
+
+
+INSERT INTO bookswriter VALUE (null, 1, 1);
+INSERT INTO bookswriter VALUE (null, 1, 2);
+INSERT INTO bookswriter VALUE (null, 1, 3);
+INSERT INTO bookswriter VALUE (null, 1, 4);
+INSERT INTO bookswriter VALUE (null, 1, 5);
+INSERT INTO bookswriter VALUE (null, 1, 6);
+INSERT INTO bookswriter VALUE (null, 1, 7);
+INSERT INTO bookswriter VALUE (null, 1, 8);
+INSERT INTO bookswriter VALUE (null, 1, 9);
+INSERT INTO bookswriter VALUE (null, 1, 10);
+INSERT INTO bookswriter VALUE (null, 1, 11);
+INSERT INTO bookswriter VALUE (null, 1, 12);
+INSERT INTO bookswriter VALUE (null, 1, 13);
+INSERT INTO bookswriter VALUE (null, 1, 14);
+INSERT INTO bookswriter VALUE (null, 1, 15);
+INSERT INTO bookswriter VALUE (null, 2, 16);
+INSERT INTO bookswriter VALUE (null, 2, 17);
+INSERT INTO bookswriter VALUE (null, 2, 18);
+INSERT INTO bookswriter VALUE (null, 2, 19);
+INSERT INTO bookswriter VALUE (null, 2, 20);
+INSERT INTO bookswriter VALUE (null, 2, 21);
+INSERT INTO bookswriter VALUE (null, 2, 22);
+INSERT INTO bookswriter VALUE (null, 2, 23);
+INSERT INTO bookswriter VALUE (null, 2, 24);
+INSERT INTO bookswriter VALUE (null, 2, 25);
+INSERT INTO bookswriter VALUE (null, 2, 26);
+INSERT INTO bookswriter VALUE (null, 2, 27);
+INSERT INTO bookswriter VALUE (null, 2, 28);
+INSERT INTO bookswriter VALUE (null, 2, 29);
+INSERT INTO bookswriter VALUE (null, 2, 30);
+INSERT INTO bookswriter VALUE (null, 3, 31);
+INSERT INTO bookswriter VALUE (null, 3, 32);
+INSERT INTO bookswriter VALUE (null, 3, 33);
+INSERT INTO bookswriter VALUE (null, 3, 34);
+INSERT INTO bookswriter VALUE (null, 3, 35);
+INSERT INTO bookswriter VALUE (null, 3, 36);
+INSERT INTO bookswriter VALUE (null, 3, 37);
+INSERT INTO bookswriter VALUE (null, 3, 38);
+INSERT INTO bookswriter VALUE (null, 3, 39);
+INSERT INTO bookswriter VALUE (null, 3, 40);
+INSERT INTO bookswriter VALUE (null, 3, 41);
+INSERT INTO bookswriter VALUE (null, 3, 42);
+INSERT INTO bookswriter VALUE (null, 3, 43);
+INSERT INTO bookswriter VALUE (null, 3, 44);
+INSERT INTO bookswriter VALUE (null, 3, 45);
+INSERT INTO bookswriter VALUE (null, 4, 46);
+INSERT INTO bookswriter VALUE (null, 4, 47);
+INSERT INTO bookswriter VALUE (null, 4, 48);
+INSERT INTO bookswriter VALUE (null, 4, 49);
+INSERT INTO bookswriter VALUE (null, 4, 50);
+INSERT INTO bookswriter VALUE (null, 4, 51);
+INSERT INTO bookswriter VALUE (null, 4, 52);
+INSERT INTO bookswriter VALUE (null, 4, 53);
+INSERT INTO bookswriter VALUE (null, 4, 54);
+INSERT INTO bookswriter VALUE (null, 5, 55);
+INSERT INTO bookswriter VALUE (null, 5, 56);
+INSERT INTO bookswriter VALUE (null, 5, 57);
+INSERT INTO bookswriter VALUE (null, 5, 58);
+INSERT INTO bookswriter VALUE (null, 5, 59);
+INSERT INTO bookswriter VALUE (null, 5, 60);
+INSERT INTO bookswriter VALUE (null, 5, 61);
+INSERT INTO bookswriter VALUE (null, 5, 62);
+INSERT INTO bookswriter VALUE (null, 6, 63);
+INSERT INTO bookswriter VALUE (null, 6, 64);
+INSERT INTO bookswriter VALUE (null, 6, 65);
+INSERT INTO bookswriter VALUE (null, 6, 66);
+INSERT INTO bookswriter VALUE (null, 6, 67);
+INSERT INTO bookswriter VALUE (null, 6, 68);
+INSERT INTO bookswriter VALUE (null, 6, 69);
+INSERT INTO bookswriter VALUE (null, 7, 70);
+INSERT INTO bookswriter VALUE (null, 7, 71);
+INSERT INTO bookswriter VALUE (null, 7, 72);
+INSERT INTO bookswriter VALUE (null, 7, 73);
+INSERT INTO bookswriter VALUE (null, 7, 74);
+INSERT INTO bookswriter VALUE (null, 7, 75);
+INSERT INTO bookswriter VALUE (null, 8, 76);
+INSERT INTO bookswriter VALUE (null, 8, 77);
+INSERT INTO bookswriter VALUE (null, 8, 78);
+INSERT INTO bookswriter VALUE (null, 8, 79);
+INSERT INTO bookswriter VALUE (null, 8, 80);
+INSERT INTO bookswriter VALUE (null, 9, 81);
+INSERT INTO bookswriter VALUE (null, 9, 82);
+INSERT INTO bookswriter VALUE (null, 9, 83);
+INSERT INTO bookswriter VALUE (null, 9, 84);
+INSERT INTO bookswriter VALUE (null, 9, 85);
+INSERT INTO bookswriter VALUE (null, 10, 86);
+INSERT INTO bookswriter VALUE (null, 10, 87);
+INSERT INTO bookswriter VALUE (null, 10, 88);
+INSERT INTO bookswriter VALUE (null, 10, 89);
+INSERT INTO bookswriter VALUE (null, 11, 90);
+INSERT INTO bookswriter VALUE (null, 11, 91);
+INSERT INTO bookswriter VALUE (null, 11, 92);
+INSERT INTO bookswriter VALUE (null, 12, 93);
+INSERT INTO bookswriter VALUE (null, 12, 94);
+INSERT INTO bookswriter VALUE (null, 12, 95);
+INSERT INTO bookswriter VALUE (null, 13, 96);
+INSERT INTO bookswriter VALUE (null, 13, 97);
+INSERT INTO bookswriter VALUE (null, 14, 98);
+INSERT INTO bookswriter VALUE (null, 14, 99);
+INSERT INTO bookswriter VALUE (null, 15, 100);
+
+
+
+
+
+INSERT INTO bookscategory VALUE (null, 1, 1);
+INSERT INTO bookscategory VALUE (null, 2, 1);
+INSERT INTO bookscategory VALUE (null, 2, 2);
+INSERT INTO bookscategory VALUE (null, 3, 2);
+INSERT INTO bookscategory VALUE (null, 3, 3);
+INSERT INTO bookscategory VALUE (null, 4, 3);
+INSERT INTO bookscategory VALUE (null, 4, 4);
+INSERT INTO bookscategory VALUE (null, 5, 4);
+INSERT INTO bookscategory VALUE (null, 5, 5);
+INSERT INTO bookscategory VALUE (null, 6, 5);
+INSERT INTO bookscategory VALUE (null, 6, 6);
+INSERT INTO bookscategory VALUE (null, 7, 6);
+INSERT INTO bookscategory VALUE (null, 7, 7);
+INSERT INTO bookscategory VALUE (null, 8, 7);
+INSERT INTO bookscategory VALUE (null, 8, 8);
+INSERT INTO bookscategory VALUE (null, 9, 8);
+INSERT INTO bookscategory VALUE (null, 9, 9);
+INSERT INTO bookscategory VALUE (null, 10, 9);
+INSERT INTO bookscategory VALUE (null, 10, 10);
+INSERT INTO bookscategory VALUE (null, 1, 10);
+INSERT INTO bookscategory VALUE (null, 1, 11);
+INSERT INTO bookscategory VALUE (null, 2, 11);
+INSERT INTO bookscategory VALUE (null, 1, 12);
+INSERT INTO bookscategory VALUE (null, 2, 12);
+INSERT INTO bookscategory VALUE (null, 11, 13);
+INSERT INTO bookscategory VALUE (null, 12, 13);
+INSERT INTO bookscategory VALUE (null, 11, 14);
+INSERT INTO bookscategory VALUE (null, 12, 14);
+INSERT INTO bookscategory VALUE (null, 13, 15);
+INSERT INTO bookscategory VALUE (null, 14, 15);
+INSERT INTO bookscategory VALUE (null, 14, 16);
+INSERT INTO bookscategory VALUE (null, 15, 16);
+INSERT INTO bookscategory VALUE (null, 15, 17);
+INSERT INTO bookscategory VALUE (null, 16, 17);
+INSERT INTO bookscategory VALUE (null, 16, 18);
+INSERT INTO bookscategory VALUE (null, 10, 18);
+INSERT INTO bookscategory VALUE (null, 16, 19);
+INSERT INTO bookscategory VALUE (null, 17, 19);
+INSERT INTO bookscategory VALUE (null, 17, 20);
+INSERT INTO bookscategory VALUE (null, 18, 20);
+INSERT INTO bookscategory VALUE (null, 18, 21);
+INSERT INTO bookscategory VALUE (null, 19, 21);
+INSERT INTO bookscategory VALUE (null, 19, 22);
+INSERT INTO bookscategory VALUE (null, 20, 22);
+INSERT INTO bookscategory VALUE (null, 20, 23);
+INSERT INTO bookscategory VALUE (null, 21, 23);
+INSERT INTO bookscategory VALUE (null, 21, 24);
+INSERT INTO bookscategory VALUE (null, 22, 24);
+INSERT INTO bookscategory VALUE (null, 22, 25);
+INSERT INTO bookscategory VALUE (null, 23, 25);
+INSERT INTO bookscategory VALUE (null, 23, 26);
+INSERT INTO bookscategory VALUE (null, 24, 26);
+INSERT INTO bookscategory VALUE (null, 24, 27);
+INSERT INTO bookscategory VALUE (null, 25, 27);
+INSERT INTO bookscategory VALUE (null, 25, 28);
+INSERT INTO bookscategory VALUE (null, 1, 28);
+INSERT INTO bookscategory VALUE (null, 1, 29);
+INSERT INTO bookscategory VALUE (null, 2, 29);
+INSERT INTO bookscategory VALUE (null, 2, 30);
+INSERT INTO bookscategory VALUE (null, 3, 30);
+INSERT INTO bookscategory VALUE (null, 3, 31);
+INSERT INTO bookscategory VALUE (null, 4, 31);
+INSERT INTO bookscategory VALUE (null, 4, 32);
+INSERT INTO bookscategory VALUE (null, 5, 32);
+INSERT INTO bookscategory VALUE (null, 5, 33);
+INSERT INTO bookscategory VALUE (null, 6, 33);
+INSERT INTO bookscategory VALUE (null, 6, 34);
+INSERT INTO bookscategory VALUE (null, 7, 34);
+INSERT INTO bookscategory VALUE (null, 7, 35);
+INSERT INTO bookscategory VALUE (null, 8, 35);
+INSERT INTO bookscategory VALUE (null, 8, 36);
+INSERT INTO bookscategory VALUE (null, 9, 36);
+INSERT INTO bookscategory VALUE (null, 9, 37);
+INSERT INTO bookscategory VALUE (null, 10, 37);
+INSERT INTO bookscategory VALUE (null, 10, 38);
+INSERT INTO bookscategory VALUE (null, 11, 38);
+INSERT INTO bookscategory VALUE (null, 17, 39);
+INSERT INTO bookscategory VALUE (null, 18, 39);
+INSERT INTO bookscategory VALUE (null, 18, 40);
+INSERT INTO bookscategory VALUE (null, 19, 40);
+INSERT INTO bookscategory VALUE (null, 19, 41);
+INSERT INTO bookscategory VALUE (null, 20, 41);
+INSERT INTO bookscategory VALUE (null, 20, 42);
+INSERT INTO bookscategory VALUE (null, 21, 42);
+INSERT INTO bookscategory VALUE (null, 21, 43);
+INSERT INTO bookscategory VALUE (null, 22, 43);
+INSERT INTO bookscategory VALUE (null, 22, 44);
+INSERT INTO bookscategory VALUE (null, 23, 44);
+INSERT INTO bookscategory VALUE (null, 23, 45);
+INSERT INTO bookscategory VALUE (null, 24, 45);
+INSERT INTO bookscategory VALUE (null, 24, 46);
+INSERT INTO bookscategory VALUE (null, 25, 46);
+INSERT INTO bookscategory VALUE (null, 25, 47);
+INSERT INTO bookscategory VALUE (null, 1, 47);
+INSERT INTO bookscategory VALUE (null, 1, 48);
+INSERT INTO bookscategory VALUE (null, 2, 48);
+INSERT INTO bookscategory VALUE (null, 2, 49);
+INSERT INTO bookscategory VALUE (null, 3, 49);
+INSERT INTO bookscategory VALUE (null, 3, 50);
+INSERT INTO bookscategory VALUE (null, 4, 50);
+INSERT INTO bookscategory VALUE (null, 3, 51);
+INSERT INTO bookscategory VALUE (null, 4, 51);
+INSERT INTO bookscategory VALUE (null, 4, 52);
+INSERT INTO bookscategory VALUE (null, 5, 52);
+INSERT INTO bookscategory VALUE (null, 5, 53);
+INSERT INTO bookscategory VALUE (null, 6, 53);
+INSERT INTO bookscategory VALUE (null, 6, 54);
+INSERT INTO bookscategory VALUE (null, 7, 54);
+INSERT INTO bookscategory VALUE (null, 7, 55);
+INSERT INTO bookscategory VALUE (null, 8, 55);
+INSERT INTO bookscategory VALUE (null, 8, 56);
+INSERT INTO bookscategory VALUE (null, 9, 56);
+INSERT INTO bookscategory VALUE (null, 9, 57);
+INSERT INTO bookscategory VALUE (null, 10, 57);
+INSERT INTO bookscategory VALUE (null, 10, 58);
+INSERT INTO bookscategory VALUE (null, 11, 58);
+INSERT INTO bookscategory VALUE (null, 11, 59);
+INSERT INTO bookscategory VALUE (null, 12, 59);
+INSERT INTO bookscategory VALUE (null, 12, 60);
+INSERT INTO bookscategory VALUE (null, 13, 60);
+INSERT INTO bookscategory VALUE (null, 1, 61);
+INSERT INTO bookscategory VALUE (null, 2, 62);
+INSERT INTO bookscategory VALUE (null, 3, 63);
+INSERT INTO bookscategory VALUE (null, 4, 64);
+INSERT INTO bookscategory VALUE (null, 5, 65);
+INSERT INTO bookscategory VALUE (null, 6, 66);
+INSERT INTO bookscategory VALUE (null, 7, 67);
+INSERT INTO bookscategory VALUE (null, 8, 68);
+INSERT INTO bookscategory VALUE (null, 9, 69);
+INSERT INTO bookscategory VALUE (null, 10, 70);
+INSERT INTO bookscategory VALUE (null, 11, 71);
+INSERT INTO bookscategory VALUE (null, 12, 72);
+INSERT INTO bookscategory VALUE (null, 13, 73);
+INSERT INTO bookscategory VALUE (null, 14, 74);
+INSERT INTO bookscategory VALUE (null, 15, 75);
+INSERT INTO bookscategory VALUE (null, 16, 76);
+INSERT INTO bookscategory VALUE (null, 17, 77);
+INSERT INTO bookscategory VALUE (null, 18, 78);
+INSERT INTO bookscategory VALUE (null, 19, 79);
+INSERT INTO bookscategory VALUE (null, 20, 80);
+INSERT INTO bookscategory VALUE (null, 21, 81);
+INSERT INTO bookscategory VALUE (null, 22, 82);
+INSERT INTO bookscategory VALUE (null, 23, 83);
+INSERT INTO bookscategory VALUE (null, 24, 84);
+INSERT INTO bookscategory VALUE (null, 25, 85);
+INSERT INTO bookscategory VALUE (null, 14, 86);
+INSERT INTO bookscategory VALUE (null, 15, 86);
+INSERT INTO bookscategory VALUE (null, 16, 86);
+INSERT INTO bookscategory VALUE (null, 17, 86);
+INSERT INTO bookscategory VALUE (null, 18, 86);
+INSERT INTO bookscategory VALUE (null, 19, 86);
+INSERT INTO bookscategory VALUE (null, 1, 87);
+INSERT INTO bookscategory VALUE (null, 2, 87);
+INSERT INTO bookscategory VALUE (null, 3, 87);
+INSERT INTO bookscategory VALUE (null, 4, 87);
+INSERT INTO bookscategory VALUE (null, 10, 87);
+INSERT INTO bookscategory VALUE (null, 19, 88);
+INSERT INTO bookscategory VALUE (null, 12, 88);
+INSERT INTO bookscategory VALUE (null, 13, 88);
+INSERT INTO bookscategory VALUE (null, 15, 88);
+INSERT INTO bookscategory VALUE (null, 1, 89);
+INSERT INTO bookscategory VALUE (null, 2, 89);
+INSERT INTO bookscategory VALUE (null, 3, 89);
+INSERT INTO bookscategory VALUE (null, 4, 89);
+INSERT INTO bookscategory VALUE (null, 7, 90);
+INSERT INTO bookscategory VALUE (null, 8, 90);
+INSERT INTO bookscategory VALUE (null, 9, 90);
+INSERT INTO bookscategory VALUE (null, 10, 90);
+INSERT INTO bookscategory VALUE (null, 11, 90);
+INSERT INTO bookscategory VALUE (null, 1, 91);
+INSERT INTO bookscategory VALUE (null, 2, 91);
+INSERT INTO bookscategory VALUE (null, 3, 91);
+INSERT INTO bookscategory VALUE (null, 4, 91);
+INSERT INTO bookscategory VALUE (null, 7, 92);
+INSERT INTO bookscategory VALUE (null, 8, 92);
+INSERT INTO bookscategory VALUE (null, 9, 92);
+INSERT INTO bookscategory VALUE (null, 10, 92);
+INSERT INTO bookscategory VALUE (null, 11, 93);
+INSERT INTO bookscategory VALUE (null, 12, 93);
+INSERT INTO bookscategory VALUE (null, 13, 93);
+INSERT INTO bookscategory VALUE (null, 14, 93);
+INSERT INTO bookscategory VALUE (null, 15, 94);
+INSERT INTO bookscategory VALUE (null, 16, 94);
+INSERT INTO bookscategory VALUE (null, 17, 94);
+INSERT INTO bookscategory VALUE (null, 18, 94);
+INSERT INTO bookscategory VALUE (null, 19, 95);
+INSERT INTO bookscategory VALUE (null, 20, 95);
+INSERT INTO bookscategory VALUE (null, 21, 95);
+INSERT INTO bookscategory VALUE (null, 22, 95);
+INSERT INTO bookscategory VALUE (null, 21, 96);
+INSERT INTO bookscategory VALUE (null, 22, 96);
+INSERT INTO bookscategory VALUE (null, 23, 96);
+INSERT INTO bookscategory VALUE (null, 24, 97);
+INSERT INTO bookscategory VALUE (null, 7, 97);
+INSERT INTO bookscategory VALUE (null, 8, 97);
+INSERT INTO bookscategory VALUE (null, 9, 98);
+INSERT INTO bookscategory VALUE (null, 10, 98);
+INSERT INTO bookscategory VALUE (null, 11, 98);
+INSERT INTO bookscategory VALUE (null, 12, 99);
+INSERT INTO bookscategory VALUE (null, 21, 99);
+INSERT INTO bookscategory VALUE (null, 22, 99);
+INSERT INTO bookscategory VALUE (null, 23, 99);
+INSERT INTO bookscategory VALUE (null, 13, 100);
+INSERT INTO bookscategory VALUE (null, 14, 100);
+INSERT INTO bookscategory VALUE (null, 15, 100);
+INSERT INTO bookscategory VALUE (null, 16, 100);
+INSERT INTO bookscategory VALUE (null, 17, 100);
+
+
+INSERT INTO bookinlib VALUE (null, 10, 10, 1, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 2, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 3, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 4, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 5, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 6, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 7, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 8, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 9, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 10, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 11, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 12, 1);
+INSERT INTO bookinlib VALUE (null, 1, 1, 13, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 14, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 15, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 16, 1);
+INSERT INTO bookinlib VALUE (null, 1, 1, 17, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 18, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 19, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 20, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 21, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 22, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 23, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 24, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 25, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 26, 1);
+INSERT INTO bookinlib VALUE (null, 15, 15, 27, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 28, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 29, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 30, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 31, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 32, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 33, 1);
+INSERT INTO bookinlib VALUE (null, 6, 6, 34, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 35, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 36, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 37, 1);
+INSERT INTO bookinlib VALUE (null, 8, 8, 38, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 39, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 40, 1);
+INSERT INTO bookinlib VALUE (null, 10, 10, 41, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 42, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 43, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 44, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 45, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 46, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 47, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 48, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 49, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 50, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 51, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 52, 1);
+INSERT INTO bookinlib VALUE (null, 1, 1, 53, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 54, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 55, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 56, 1);
+INSERT INTO bookinlib VALUE (null, 1, 1, 57, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 58, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 59, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 60, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 61, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 62, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 63, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 64, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 65, 1);
+INSERT INTO bookinlib VALUE (null, 11, 11, 66, 1);
+INSERT INTO bookinlib VALUE (null, 15, 15, 67, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 68, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 69, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 70, 1);
+INSERT INTO bookinlib VALUE (null, 3, 3, 71, 1);
+INSERT INTO bookinlib VALUE (null, 4, 4, 72, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 73, 1);
+INSERT INTO bookinlib VALUE (null, 6, 6, 74, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 75, 1);
+INSERT INTO bookinlib VALUE (null, 7, 7, 76, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 77, 1);
+INSERT INTO bookinlib VALUE (null, 8, 8, 78, 1);
+INSERT INTO bookinlib VALUE (null, 5, 5, 79, 1);
+INSERT INTO bookinlib VALUE (null, 2, 2, 80, 1);
+
+
+
+
+
+
+INSERT INTO bookinlib VALUE (null, 11, 11, 21, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 22, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 23, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 24, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 25, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 26, 2);
+INSERT INTO bookinlib VALUE (null, 15, 15, 27, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 28, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 29, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 30, 2);
+INSERT INTO bookinlib VALUE (null, 3, 3, 31, 2);
+INSERT INTO bookinlib VALUE (null, 4, 4, 32, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 33, 2);
+INSERT INTO bookinlib VALUE (null, 6, 6, 34, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 35, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 36, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 37, 2);
+INSERT INTO bookinlib VALUE (null, 8, 8, 38, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 39, 2);
+INSERT INTO bookinlib VALUE (null, 10, 10, 41, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 42, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 43, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 44, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 45, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 46, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 47, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 48, 2);
+INSERT INTO bookinlib VALUE (null, 4, 4, 49, 2);
+INSERT INTO bookinlib VALUE (null, 3, 3, 50, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 51, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 52, 2);
+INSERT INTO bookinlib VALUE (null, 1, 1, 53, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 54, 2);
+INSERT INTO bookinlib VALUE (null, 4, 4, 55, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 56, 2);
+INSERT INTO bookinlib VALUE (null, 1, 1, 57, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 58, 2);
+INSERT INTO bookinlib VALUE (null, 3, 3, 59, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 60, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 61, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 62, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 63, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 64, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 65, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 66, 2);
+INSERT INTO bookinlib VALUE (null, 15, 15, 67, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 68, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 69, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 70, 2);
+INSERT INTO bookinlib VALUE (null, 3, 3, 71, 2);
+INSERT INTO bookinlib VALUE (null, 4, 4, 72, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 73, 2);
+INSERT INTO bookinlib VALUE (null, 6, 6, 74, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 75, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 76, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 77, 2);
+INSERT INTO bookinlib VALUE (null, 8, 8, 78, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 79, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 80, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 81, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 82, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 83, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 84, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 85, 2);
+INSERT INTO bookinlib VALUE (null, 11, 11, 86, 2);
+INSERT INTO bookinlib VALUE (null, 15, 15, 87, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 88, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 89, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 90, 2);
+INSERT INTO bookinlib VALUE (null, 3, 3, 91, 2);
+INSERT INTO bookinlib VALUE (null, 4, 4, 92, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 93, 2);
+INSERT INTO bookinlib VALUE (null, 6, 6, 94, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 95, 2);
+INSERT INTO bookinlib VALUE (null, 7, 7, 96, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 97, 2);
+INSERT INTO bookinlib VALUE (null, 8, 8, 98, 2);
+INSERT INTO bookinlib VALUE (null, 5, 5, 99, 2);
+INSERT INTO bookinlib VALUE (null, 2, 2, 100, 2);
+
+
+
+
+
+INSERT INTO bookinlib VALUE (null, 10, 10, 1, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 2, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 3, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 4, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 5, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 6, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 7, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 8, 3);
+INSERT INTO bookinlib VALUE (null, 4, 4, 9, 3);
+INSERT INTO bookinlib VALUE (null, 3, 3, 10, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 11, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 12, 3);
+INSERT INTO bookinlib VALUE (null, 1, 1, 13, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 14, 3);
+INSERT INTO bookinlib VALUE (null, 4, 4, 15, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 16, 3);
+INSERT INTO bookinlib VALUE (null, 1, 1, 17, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 18, 3);
+INSERT INTO bookinlib VALUE (null, 3, 3, 19, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 20, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 21, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 22, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 23, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 24, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 25, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 26, 3);
+INSERT INTO bookinlib VALUE (null, 15, 15, 27, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 28, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 29, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 30, 3);
+INSERT INTO bookinlib VALUE (null, 3, 3, 31, 3);
+INSERT INTO bookinlib VALUE (null, 4, 4, 32, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 33, 3);
+INSERT INTO bookinlib VALUE (null, 6, 6, 34, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 35, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 36, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 37, 3);
+INSERT INTO bookinlib VALUE (null, 8, 8, 38, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 39, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 40, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 60, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 61, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 62, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 63, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 64, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 65, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 66, 3);
+INSERT INTO bookinlib VALUE (null, 15, 15, 67, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 68, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 69, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 70, 3);
+INSERT INTO bookinlib VALUE (null, 3, 3, 71, 3);
+INSERT INTO bookinlib VALUE (null, 4, 4, 72, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 73, 3);
+INSERT INTO bookinlib VALUE (null, 6, 6, 74, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 75, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 76, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 77, 3);
+INSERT INTO bookinlib VALUE (null, 8, 8, 78, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 79, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 80, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 81, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 82, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 83, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 84, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 85, 3);
+INSERT INTO bookinlib VALUE (null, 11, 11, 86, 3);
+INSERT INTO bookinlib VALUE (null, 15, 15, 87, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 88, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 89, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 90, 3);
+INSERT INTO bookinlib VALUE (null, 3, 3, 91, 3);
+INSERT INTO bookinlib VALUE (null, 4, 4, 92, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 93, 3);
+INSERT INTO bookinlib VALUE (null, 6, 6, 94, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 95, 3);
+INSERT INTO bookinlib VALUE (null, 7, 7, 96, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 97, 3);
+INSERT INTO bookinlib VALUE (null, 8, 8, 98, 3);
+INSERT INTO bookinlib VALUE (null, 5, 5, 99, 3);
+INSERT INTO bookinlib VALUE (null, 2, 2, 100, 3);
+
+
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 1, 1);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 2, 2);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 4, 3);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 5, 4);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 6, 5);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 8, 6);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 9, 7);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 11, 7);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 13, 8);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 14, 9);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 15, 68);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 16, 10);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 16, 11);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 11, 12);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 13, 14);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 14, 14);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 15, 15);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 24, 16);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 24, 17);
+
+
+
+
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 18, 84);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 19, 85);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 20, 85);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 21, 86);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 22, 87);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 25, 88);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 25, 89);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 26, 121);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 27, 122);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 30, 123);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 31, 124);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 32, 124);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 33, 121);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 34, 122);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 33, 87);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 32, 88);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 31, 89);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 30, 121);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 29, 132);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 29, 133);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 28, 134);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 28, 134);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 26, 131);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 35, 111);
+
+
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 36, 165);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 37, 166);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 38, 166);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 39, 200);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 42, 224);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 43, 234);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 43, 214);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 44, 215);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 44, 214);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 45, 200);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 45, 185);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 46, 185);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 46, 190);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 47, 166);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 47, 200);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 48, 224);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 48, 234);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 49, 214);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 49, 215);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 50, 235);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 50, 210);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 51, 185);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 52, 195);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 52, 190);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 51, 240);
+INSERT INTO lending (lendid, userid, relid) VALUES  (null, 42, 239);
+
+
+
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 1, 60);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 2, 61);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 3, 62);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 4,63);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 5, 64);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 6, 70);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 7, 71);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 8, 31);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 9, 31);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 10, 51);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 11, 41);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 12, 51);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 12, 22);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 13, 21);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 13, 58);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 14, 56);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 14, 18);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 15, 17);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 15, 12);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 16, 5);
+
+
+
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 24, 100);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 25, 101);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 26, 102);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 27, 103);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 28, 104);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 29, 105);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 30, 111);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 31, 121);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 32, 140);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 33, 141);
+
+
+
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 35, 160);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 36, 161);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 37, 162);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 38, 163);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 39, 164);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 40, 165);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 44, 181);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 45, 191);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 45, 200);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 46, 171);
+
+
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 48, 200);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 48, 201);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 49, 222);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 49, 223);
+INSERT INTO reservation(resid, userid, relid) VALUES  (null, 50, 224);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 50, 225);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 51, 227);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 51, 221);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 52, 210);
+INSERT INTO reservation (resid, userid, relid) VALUES  (null, 52, 221);
+
+
+
+
+
+
+
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Its an amazing book!'  , 1, 1,5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'I like it.' , 2, 2, 4);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Is was so bad' , 3, 4, 1);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'It was a little bit boring' , 4, 5, 2);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'So good' , 5, 6, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Nice' , 6, 8, 4);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Excellent' , 7, 9, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Acceptable' , 7, 11, 4);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Wonderful' , 8, 13, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Positive' , 9, 14, 4);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Superb' , 2, 2, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Admirable' , 68, 15, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Awful' , 10, 16, 1);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Lousy' , 11, 16, 2);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Imperfect' , 12, 11, 3);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Poor' , 14, 13, 3);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Great' , 14, 14, 4);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Good' , 15, 15, 5);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'Boring' , 16, 16, 2);
+INSERT INTO review (reviewid, text, bookid, userid, scale) VALUES  (null, 'OK' , 17, 16, 3);
+
+
+
+
+INSERT INTO keyword VALUES (null, 'Classic');
+INSERT INTO keyword VALUES (null, 'Bestseller');
+INSERT INTO keyword VALUES (null, 'Critically Acclaimed');
+INSERT INTO keyword VALUES (null, 'New Book');
+INSERT INTO keyword VALUES (null, 'Memoir');
+INSERT INTO keyword VALUES (null, 'Young Adult');
+INSERT INTO keyword VALUES (null, 'Graphic Novel');
+INSERT INTO keyword VALUES (null, 'Business');
+INSERT INTO keyword VALUES (null, 'Travel');
+INSERT INTO keyword VALUES (null, 'Nature');
+INSERT INTO keyword VALUES (null, 'Art');
+INSERT INTO keyword VALUES (null, 'Music');
+INSERT INTO keyword VALUES (null, 'Relationships');
+INSERT INTO keyword VALUES (null, 'Motivation');
+INSERT INTO keyword VALUES (null, 'Parenting');
+
+
+INSERT INTO bookskeywords VALUES (null, 1, 1);
+INSERT INTO bookskeywords VALUES (null, 1, 2);
+INSERT INTO bookskeywords VALUES (null, 1, 3);
+INSERT INTO bookskeywords VALUES (null, 1, 4);
+INSERT INTO bookskeywords VALUES (null, 1, 5);
+INSERT INTO bookskeywords VALUES (null, 1, 6);
+INSERT INTO bookskeywords VALUES (null, 1, 7);
+INSERT INTO bookskeywords VALUES (null, 1, 8);
+INSERT INTO bookskeywords VALUES (null, 1, 9);
+INSERT INTO bookskeywords VALUES (null, 1, 10);
+INSERT INTO bookskeywords VALUES (null, 2, 11);
+INSERT INTO bookskeywords VALUES (null, 2, 12);
+INSERT INTO bookskeywords VALUES (null, 2, 13);
+INSERT INTO bookskeywords VALUES (null, 2, 14);
+INSERT INTO bookskeywords VALUES (null, 2, 15);
+INSERT INTO bookskeywords VALUES (null, 2, 16);
+INSERT INTO bookskeywords VALUES (null, 2, 17);
+INSERT INTO bookskeywords VALUES (null, 2, 18);
+INSERT INTO bookskeywords VALUES (null, 2, 19);
+INSERT INTO bookskeywords VALUES (null, 2, 20);
+INSERT INTO bookskeywords VALUES (null, 3, 21);
+INSERT INTO bookskeywords VALUES (null, 3, 22);
+INSERT INTO bookskeywords VALUES (null, 3, 23);
+INSERT INTO bookskeywords VALUES (null, 3, 24);
+INSERT INTO bookskeywords VALUES (null, 3, 25);
+INSERT INTO bookskeywords VALUES (null, 3, 26);
+INSERT INTO bookskeywords VALUES (null, 3, 27);
+INSERT INTO bookskeywords VALUES (null, 3, 28);
+INSERT INTO bookskeywords VALUES (null, 3, 29);
+INSERT INTO bookskeywords VALUES (null, 3, 30);
+INSERT INTO bookskeywords VALUES (null, 4, 31);
+INSERT INTO bookskeywords VALUES (null, 4, 32);
+INSERT INTO bookskeywords VALUES (null, 4, 33);
+INSERT INTO bookskeywords VALUES (null, 4, 34);
+INSERT INTO bookskeywords VALUES (null, 4, 35);
+INSERT INTO bookskeywords VALUES (null, 4, 36);
+INSERT INTO bookskeywords VALUES (null, 4, 37);
+INSERT INTO bookskeywords VALUES (null, 4, 38);
+INSERT INTO bookskeywords VALUES (null, 4, 39);
+INSERT INTO bookskeywords VALUES (null, 5, 40);
+INSERT INTO bookskeywords VALUES (null, 5, 41);
+INSERT INTO bookskeywords VALUES (null, 5, 42);
+INSERT INTO bookskeywords VALUES (null, 5, 43);
+INSERT INTO bookskeywords VALUES (null, 5, 44);
+INSERT INTO bookskeywords VALUES (null, 5, 45);
+INSERT INTO bookskeywords VALUES (null, 5, 46);
+INSERT INTO bookskeywords VALUES (null, 5, 47);
+INSERT INTO bookskeywords VALUES (null, 5, 48);
+INSERT INTO bookskeywords VALUES (null, 5, 49);
+INSERT INTO bookskeywords VALUES (null, 6, 50);
+INSERT INTO bookskeywords VALUES (null, 6, 51);
+INSERT INTO bookskeywords VALUES (null, 6, 52);
+INSERT INTO bookskeywords VALUES (null, 6, 53);
+INSERT INTO bookskeywords VALUES (null, 6, 54);
+INSERT INTO bookskeywords VALUES (null, 6, 55);
+INSERT INTO bookskeywords VALUES (null, 6, 56);
+INSERT INTO bookskeywords VALUES (null, 6, 57);
+INSERT INTO bookskeywords VALUES (null, 6, 58);
+INSERT INTO bookskeywords VALUES (null, 6, 59);
+INSERT INTO bookskeywords VALUES (null, 7, 60);
+INSERT INTO bookskeywords VALUES (null, 7, 61);
+INSERT INTO bookskeywords VALUES (null, 7, 62);
+INSERT INTO bookskeywords VALUES (null, 7, 63);
+INSERT INTO bookskeywords VALUES (null, 7, 64);
+INSERT INTO bookskeywords VALUES (null, 7, 65);
+INSERT INTO bookskeywords VALUES (null, 7, 66);
+INSERT INTO bookskeywords VALUES (null, 7, 67);
+INSERT INTO bookskeywords VALUES (null, 7, 68);
+INSERT INTO bookskeywords VALUES (null, 7, 69);
+INSERT INTO bookskeywords VALUES (null, 8, 70);
+INSERT INTO bookskeywords VALUES (null, 8, 71);
+INSERT INTO bookskeywords VALUES (null, 8, 72);
+INSERT INTO bookskeywords VALUES (null, 8, 73);
+INSERT INTO bookskeywords VALUES (null, 8, 74);
+INSERT INTO bookskeywords VALUES (null, 8, 75);
+INSERT INTO bookskeywords VALUES (null, 9, 76);
+INSERT INTO bookskeywords VALUES (null, 9, 77);
+INSERT INTO bookskeywords VALUES (null, 9, 78);
+INSERT INTO bookskeywords VALUES (null, 9, 79);
+INSERT INTO bookskeywords VALUES (null, 9, 80);
+INSERT INTO bookskeywords VALUES (null, 10, 81);
+INSERT INTO bookskeywords VALUES (null, 10, 82);
+INSERT INTO bookskeywords VALUES (null, 10, 83);
+INSERT INTO bookskeywords VALUES (null, 10, 84);
+INSERT INTO bookskeywords VALUES (null, 10, 85);
+INSERT INTO bookskeywords VALUES (null, 11, 86);
+INSERT INTO bookskeywords VALUES (null, 11, 87);
+INSERT INTO bookskeywords VALUES (null, 11, 88);
+INSERT INTO bookskeywords VALUES (null, 11, 89);
+INSERT INTO bookskeywords VALUES (null, 11, 90);
+INSERT INTO bookskeywords VALUES (null, 12, 91);
+INSERT INTO bookskeywords VALUES (null, 12, 92);
+INSERT INTO bookskeywords VALUES (null, 12, 93);
+INSERT INTO bookskeywords VALUES (null, 12, 94);
+INSERT INTO bookskeywords VALUES (null, 12, 95);
+INSERT INTO bookskeywords VALUES (null, 13, 96);
+INSERT INTO bookskeywords VALUES (null, 13, 97);
+INSERT INTO bookskeywords VALUES (null, 13, 98);
+INSERT INTO bookskeywords VALUES (null, 14, 99);
+INSERT INTO bookskeywords VALUES (null, 14, 100);
