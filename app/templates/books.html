@@ -1,0 +1,307 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if books|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Books found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Publisher</th>
+                                    <th>ISBN</th>
+                                    <th>Author's first name</th>
+                                    <th>Author's last name</th>
+                                    <th>Number of pages</th>
+                                    <th>Summary</th>
+                                    <th>Image</th>
+                                    <th>Categories</th>
+                                    <th>Language</th>
+                                    <th>Keywords</th>
+                        
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for book in books %}
+                                    <tr>
+                                        <td> {{ book.bookid }}</td>
+                                        <td> {{ book.title }} </td>
+                                        <td> {{ book.publisher }} </td>
+                                        <td> {{ book.ISBN }} </td>
+                                        <td> {{ book.writerfirstname }} </td>
+                                        <td> {{ book.writerlastname }} </td>
+                                        <td> {{ book.pgnum }} </td>
+                                        <td>
+                                            <div style="max-height: 100px; overflow-y: auto;">{{ book.summary }}</div>
+                                        </td>
+                                        <td> {{ book.img }} </td>
+                                        <td> {{ book.categories }} </td>
+                                        <td> {{ book.lang }} </td>
+                                        <td> {{ book.keywords }} </td>
+                               
+                                
+                                        <td>
+                                            <a type="button" onclick="setModalFields(this,'{{username}}')"
+                                            data-toggle="modal"
+                                            data-bookid="{{ book.bookid }}"
+                                            data-title="{{book.title}}" data-publisher="{{book.publisher}}"
+                                            data-ISBN="{{book.ISBN}}"
+                                            data-writerfirstname="{{book.writerfirstname}}"
+                                            data-writerlastname="{{book.writerlastname}}"
+                                            data-pgnum="{{book.pgnum}}" data-summary="{{book.summary}}"
+                                            data-img="{{book.img}}" 
+                                            data-lang="{{book.lang}}" 
+                                            
+                                            
+                                            data-bs-toggle = "modal"
+                                            data-bs-target="#editModal">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button style = "all: unset; cursor: pointer;" type = "button"
+                                            data-bs-toggle = "modal" data-bs-target = "#deleteModal"
+                                            data-bookid = "{{ book.bookid }}" onclick = "setDeleteModalFields(this,'{{username}}')">
+                                                <i class = "fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/centop">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+
+<!-- Edit modal -->
+<div id="editModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Book</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form">
+                    {{ form.hidden_tag() }}
+                    <div style="text-align: center;">
+                        <input type="text" name="id" id="id" readonly>
+                        <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                        {{ form.title(id = "title", required = False) }}
+                        {{ form.publisher(id = "publisher", required = False) }}
+                        {{ form.ISBN(id = "ISBN", required = False) }}
+                        {{ form.writerfirstname(id = "writerfirstname", required = False) }}
+                        {{ form.writerlastname(id = "writerlastname", required = False) }}
+                        {{ form.pgnum(id = "pgnum", required = False) }}
+                        {{ form.summary(id = "summary", required = False) }}
+                        {{ form.img(id = "img", required = False) }}
+                        {{ form.lang(id = "lang", required = False) }}
+                     
+                    </div>
+                    <div>
+                        {% if form.title.errors %}
+                        <ul class = "errors">
+                            {% for error in form.title.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.publisher.errors %}
+                        <ul class = "errors">
+                            {% for error in form.publisher.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.ISBN.errors %}
+                        <ul class = "errors">
+                            {% for error in form.ISBN.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.writerfirstname.errors %}
+                        <ul class = "errors">
+                            {% for error in form.writerfirstname.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.writerlastname.errors %}
+                        <ul class = "errors">
+                            {% for error in form.writerlastname.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.pgnum.errors %}
+                        <ul class = "errors">
+                            {% for error in form.pgnum.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.summary.errors %}
+                        <ul class = "errors">
+                            {% for error in form.summary.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.img.errors %}
+                        <ul class = "errors">
+                            {% for error in form.img.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.lang.errors %}
+                        <ul class = "errors">
+                            {% for error in form.lang.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        
+
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {{ form.submit(class = "btn btn btn-success", form = "modal-form", value = "Update") }}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Delete modal -->
+<div class = "modal fade" id="deleteModal">
+    <div class = "modal-dialog">
+        <div class = "modal-content">
+            <div class = "modal-header">
+                <h5 class = "modal-title" id = "deleteModalLabel">Delete book</h5>
+                <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-label = "Close"></button>
+            </div>
+            <div class = "modal-body">
+                The book will be deleted. Are you sure?
+            </div>
+            <div class = "modal-footer">
+                <button type = "button" class = "btn btn-secondary" data-bs-dismiss = "modal">Close</button>
+                <form id = "delete-modal-form">
+                    <input type = "submit" class = "btn btn-danger" value = "Delete">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+
+<script>
+    /*
+    function setModalFields(row,username) {
+        //document.getElementById("schoolid").value = row.getAttribute("data-schoolid");
+        document.getElementById("first_name").value = row.getAttribute("data-first_name");
+        document.getElementById("last_name").value = row.getAttribute("data-last_name");
+        document.getElementById("username").value = row.getAttribute("data-username");
+        document.getElementById("schoolid").value = row.getAttribute("data-schoolid");
+        document.getElementById("password").value = row.getAttribute("data-password");
+        document.getElementById("status").value = row.getAttribute("data-status");
+        document.getElementById("birthdate").value = row.getAttribute("data-birthdate");
+        document.getElementById("num_lent").value = row.getAttribute("data-num_lent");
+        document.getElementById("num_reserved").value = row.getAttribute("data-num_reserved");
+        document.getElementById("punctual").value = row.getAttribute("data-punctual");
+        document.getElementById("email").value = row.getAttribute("data-email");
+        //document.getElementById("modal-form").action = "/op/"+username+"/users/update/" + row.getAttribute("data-userid");
+        document.getElementById("modal-form").action = "/op/"+username+"/users/update/" + row.getAttribute("data-userid");
+        document.getElementById("modal-form").method = "POST";
+        // document.getElementById("submit").addEventListener("click", (e) => {e.preventDefault();});
+        // commented line above would prevent the default behavior of the submit button, that is, sending the
+        // form data with a post request to the determined address and subsequently closing the pop-up
+    }
+*/
+
+function setModalFields(row, username) {
+    console.log(row); // Output the row element to the console for debugging
+    console.log(row.attributes); // Output the attributes of the row element for debugging
+
+    // Retrieve the user's data attributes
+    var bookId = row.getAttribute("data-bookid");
+    var title = row.getAttribute("data-title");
+    var publisher = row.getAttribute("data-publisher");
+    var ISBN = row.getAttribute("data-ISBN");
+    //var schoolId = 3 //row.getAttribute("data-schoolid");
+    var writerfirstname = row.getAttribute("data-writerfirstname");
+    var writerlastname = row.getAttribute("data-writerlastname");
+    var pgnum = row.getAttribute("data-pgnum");
+    var summary = row.getAttribute("data-summary");
+    var img = row.getAttribute("data-img");
+    var lang = row.getAttribute("data-lang");
+    
+    // Debugging: Output the retrieved attributes to the console 
+    /*
+    console.log("userId:", userId);
+    console.log("firstName:", firstName);
+    console.log("lastName:", lastName);
+    console.log("username:", username2);
+    //console.log("schoolId:", schoolId);
+    console.log("password:", password);
+    console.log("status:", status);
+    console.log("birthdate:", birthdate);
+    console.log("numLent:", numLent);
+    console.log("numReserved:", numReserved);
+    console.log("punctual:", punctual);
+    console.log("email:", email);
+     */
+    // Set the form field values based on the retrieved attributes
+    //document.getElementById("id").value = userId;
+    document.getElementById("title").value = title;
+    document.getElementById("publisher").value = publisher;
+    document.getElementById("ISBN").value = ISBN;
+    //document.getElementById("schoolid").value = schoolId;
+    document.getElementById("writerfirstname").value = writerfirstname;
+    document.getElementById("writerlastname").value = writerlastname;
+    document.getElementById("pgnum").value = pgnum;
+    document.getElementById("summary").value = summary;
+    document.getElementById("img").value = img;
+    document.getElementById("lang").value = lang;
+    
+
+    document.getElementById("modal-form").action = "/books/update/" + row.getAttribute("data-bookid");
+    document.getElementById("modal-form").method = "POST";
+}
+
+    function setDeleteModalFields(row,username) {
+        document.getElementById("delete-modal-form").action = "/books/delete/" + row.getAttribute("data-bookid");
+        document.getElementById("delete-modal-form").method = "POST";
+    }
+</script>
+{% endblock content %}

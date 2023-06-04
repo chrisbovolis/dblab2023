@@ -1,0 +1,188 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if op_reservations|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Reservations found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Start date</th>
+                                    <th>Due date</th>
+                                    <th>Reservation date</th>
+                                    <th>User's ID</th>
+                                    <th>Book's ID</th>
+                                    <th>Active?</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in op_reservations %}
+                                    <tr>
+                                        <td> {{ reservation.resid }} </td>
+                                        <td> {{ reservation.start_date }} </td>
+                                        <td> {{ reservation.due_date }} </td>
+                                        <td> {{ reservation.reservation_date }} </td>
+                                        <td> {{ reservation.userid }} </td>
+                                        <td> {{ reservation.relid }} </td>
+                                        <td> {{ reservation.active }} </td>
+                                        <td>
+                                            <a type="button" onclick="setModalFields(this)"
+                                            data-toggle="modal" data-resid="{{ reservation.resid }}" 
+                                            data-start_date="{{reservation.start_date}}" data-due_date= "{{reservation.due_date}}"
+                                            data-reservation_date="{{reservation.reservation_date}}" data-userid="{{reservation.userid}}"
+                                            data-relid="{{reservation.relid}}" data-active="{{reservation.active}}"
+                                            data-bs-toggle = "modal"
+                                            data-bs-target="#editModal">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button style = "all: unset; cursor: pointer;" type = "button"
+                                            data-bs-toggle = "modal" data-bs-target = "#deleteModal"
+                                            data-resid = "{{ reservation.resid }}" onclick = "setDeleteModalFields(this)">
+                                                <i class = "fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/op/{{ username }}">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+
+<!-- Edit modal -->
+<div id="editModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Reservation</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form">
+                    {{ form.hidden_tag() }}
+                    <div style="text-align: center;">
+                        <input type="text" name="id" id="id" readonly>
+                        <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                        {{ form.start_date(id = "start_date", required = False) }}
+                        {{ form.due_date(id = "due_date", required = False) }}
+                        {{ form.reservation_date(id = "reservation_date", required = False) }}
+                        <input type="text" name="userid" id="userid" readonly>
+                        <input type="text" name="relid" id="relid" readonly>
+                        {{ form.active(id = "active", required = False) }}
+                    </div>
+                    <div>
+                        {% if form.start_date.errors %}
+                        <ul class = "errors">
+                            {% for error in form.start_date.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.due_date.errors %}
+                        <ul class = "errors">
+                            {% for error in form.due_date.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.reservation_date.errors %}
+                        <ul class = "errors">
+                            {% for error in form.reservation_date.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        
+                        {% if form.active.errors %}
+                        <ul class = "errors">
+                            {% for error in form.active.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {{ form.submit(class = "btn btn btn-success", form = "modal-form", value = "Update") }}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- Delete modal -->
+<div class = "modal fade" id="deleteModal">
+    <div class = "modal-dialog">
+        <div class = "modal-content">
+            <div class = "modal-header">
+                <h5 class = "modal-title" id = "deleteModalLabel">Delete reservation</h5>
+                <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-label = "Close"></button>
+            </div>
+            <div class = "modal-body">
+                The reservation will be deleted. Are you sure? 
+            </div>
+            <div class = "modal-footer">
+                <button type = "button" class = "btn btn-secondary" data-bs-dismiss = "modal">Close</button>
+                <form id = "delete-modal-form">
+                    <input type = "submit" class = "btn btn-danger" value = "Delete">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+
+<script>
+    function setModalFields(row) {
+        //document.getElementById("resid").value = row.getAttribute("data-resid");
+        document.getElementById("start_date").value = row.getAttribute("data-start_date");
+        document.getElementById("due_date").value = row.getAttribute("data-due_date");
+        document.getElementById("reservation_date").value = row.getAttribute("data-reservation_date");
+        document.getElementById("userid").value = row.getAttribute("data-userid");
+        document.getElementById("relid").value = row.getAttribute("data-relid");
+        document.getElementById("active").value = row.getAttribute("active");
+        document.getElementById("modal-form").action = "/op/reservations/update/" + row.getAttribute("data-resid");
+        document.getElementById("modal-form").method = "POST";
+        // document.getElementById("submit").addEventListener("click", (e) => {e.preventDefault();});
+        // commented line above would prevent the default behavior of the submit button, that is, sending the
+        // form data with a post request to the determined address and subsequently closing the pop-up
+    }
+
+    function setDeleteModalFields(row) {
+        document.getElementById("delete-modal-form").action = "/op/reservations/delete/" + row.getAttribute("data-resid");
+        document.getElementById("delete-modal-form").method = "POST";
+    }
+</script>
+{% endblock content %}
+

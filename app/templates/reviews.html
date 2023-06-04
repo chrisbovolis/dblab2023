@@ -1,0 +1,194 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if reviews|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Reviews found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Review</th>
+                                    <th>Upload date</th>
+                                    <th>Book</th>
+                                    <th>User</th>
+                                    <th>Score</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in reviews %}
+                                    <tr>
+                                        <td> {{ review.reviewid }}</td>
+                                        <td> {{ review.text }} </td>
+                                        <td> {{ review.posting_date }} </td>
+                                        <td> {{ review.bookid }} </td>
+                                        <td> {{ review.userid }} </td>
+                                        <td> {{ review.scale }} </td>
+                                        <td>
+                                            <a type="button" onclick="setModalFields(this)"
+                                            data-toggle="modal"
+                                            data-reviewid="{{ review.reviewid }}"
+                                            data-text="{{review.text}}" 
+                                            data-posting_date= "{{review.posting_date}}"
+                                            data-bookid="{{review.bookid}}"
+                                            data-userid="{{review.userid}}"
+                                            data-scale="{{review.scale}}" 
+                                            data-bs-toggle = "modal"
+                                            data-bs-target="#editModal">
+                                                <i class="fa fa-edit"></i>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button style = "all: unset; cursor: pointer;" type = "button"
+                                            data-bs-toggle = "modal" data-bs-target = "#deleteModal"
+                                            data-reviewid = "{{ review.reviewid }}" onclick = "setDeleteModalFields(this)">
+                                                <i class = "fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit modal -->
+<div id="editModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Review</h4>
+            </div>
+            <div class="modal-body">
+                <form id="modal-form">
+                    {{ form.hidden_tag() }}
+                    <div style="text-align: center;">
+                        <input type="text" name="id" id="id" readonly>
+                        <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                        {{ form.text(id = "text", required = False) }}
+                        {{ form.posting_date(id = "posting_date", required = False) }}
+                        {{ form.bookid(id = "bookid", required = False) }}
+                        {{ form.userid(id = "userid", required = False) }}
+                        {{ form.scale(id = "scale", required = False) }}
+                    </div>
+                    <div>
+                        {% if form.text.errors %}
+                        <ul class = "errors">
+                            {% for error in form.text.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.posting_date.errors %}
+                        <ul class = "errors">
+                            {% for error in form.posting_date.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.bookid.errors %}
+                        <ul class = "errors">
+                            {% for error in form.bookid.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.userid.errors %}
+                        <ul class = "errors">
+                            {% for error in form.userid.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if form.scale.errors %}
+                        <ul class = "errors">
+                            {% for error in form.scale.errors %}
+                            <li class = "alert text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {{ form.submit(class = "btn btn btn-success", form = "modal-form", value = "Update") }}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Delete modal -->
+<div class = "modal fade" id="deleteModal">
+    <div class = "modal-dialog">
+        <div class = "modal-content">
+            <div class = "modal-header">
+                <h5 class = "modal-title" id = "deleteModalLabel">Delete review</h5>
+                <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-label = "Close"></button>
+            </div>
+            <div class = "modal-body">
+                The review will be deleted. Are you sure?
+            </div>
+            <div class = "modal-footer">
+                <button type = "button" class = "btn btn-secondary" data-bs-dismiss = "modal">Close</button>
+                <form id = "delete-modal-form">
+                    <input type = "submit" class = "btn btn-danger" value = "Delete">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+
+<script>
+    function setModalFields(row) {
+        //document.getElementById("reviewid").value = row.getAttribute("data-reviewid");
+        document.getElementById("text").value = row.getAttribute("data-text");
+        document.getElementById("posting_date").value = row.getAttribute("data-posting_date");
+        document.getElementById("bookid").value = row.getAttribute("data-bookid");
+        document.getElementById("userid").value = row.getAttribute("data-userid");
+        document.getElementById("scale").value = row.getAttribute("data-scale");
+       
+        document.getElementById("modal-form").action = "/reviews/update/" + row.getAttribute("data-reviewid");
+        document.getElementById("modal-form").method = "POST";
+        // document.getElementById("submit").addEventListener("click", (e) => {e.preventDefault();});
+        // commented line above would prevent the default behavior of the submit button, that is, sending the
+        // form data with a post request to the determined address and subsequently closing the pop-up
+    }
+
+    function setDeleteModalFields(row) {
+        document.getElementById("delete-modal-form").action = "/reviews/delete/" + row.getAttribute("data-reviewid");
+        document.getElementById("delete-modal-form").method = "POST";
+    }
+</script>
+
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/centop">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

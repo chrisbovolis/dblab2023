@@ -1,0 +1,79 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container" id="row-container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+            <div class="col-md-6">
+                <div class="card" id="card-container-layout">
+                    <div class="card-body" id="card">
+                        <h4 class="card-title">Books</h4>
+                        <p class="card-text paragraph-custom">
+                            Simple query to database to show all books, or enter a new book into the database
+                        </p>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/books">Show</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card" id="card-container-layout">
+                    <div class="card-body" id="card">
+                        <h4 class="card-title">Reservations</h4>
+                        <p class="card-text paragraph-custom">
+                                Simple query to database to show all reservations, or enter a new reservation into the database
+                        </p>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/reservations">Show</a>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/reservation/create">Create</a>
+                    </div>
+                </div>
+            </div>
+    <div class="row" id="row">
+            <div class="col-md-6">
+                <div class="card" id="card-container-layout">
+                    <div class="card-body" id="card">
+                        <h4 class="card-title">Lendings</h4>
+                        <p class="card-text paragraph-custom">
+                            Simple query to database to show all lendings, or enter a new lending into the database
+                        </p>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/lendings">Show</a>
+                    </div>
+                </div>
+            </div>
+                
+            <div class="col-md-6">
+                <div class="card" id="card-container-layout">
+                    <div class="card-body" id="card">
+                        <h4 class="card-title">Reviews</h4>
+                        <p class="card-text paragraph-custom">
+                            Simple query to database to show all reviews, or enter a new review into the database
+                        </p>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/reviews">Show</a>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/reviews/create">Create</a>
+                        <a class="btn btn-primary btn-submit-custom" href="/user/{{userid}}/reviews/mine">Alter</a>                     
+                    </div>
+
+
+
+                </div>
+            </div>
+    <div class="row" id="row-2">
+        <div class="col-md-12">
+            <div class="card" id="card-container-layout">
+                <div class="card-body" id="card">
+                    <h4 class="card-title">Queries</h4>
+                    <p></p>
+                    <p>
+                        <a class="btn btn-primary btn-submit-custom" href="/op/editpass/{{userid}}">Change password</a>
+                    </p>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+                
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

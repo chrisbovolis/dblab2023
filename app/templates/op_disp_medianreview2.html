@@ -1,0 +1,49 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                    {% if books|length == 0 %}
+                        <h1 style="margin-top: 5rem;">No found!</h1>
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Average Score</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for book in books %}
+                                    <tr>
+                                        <td>{{ book.median_review }}</td>
+                                        <td>
+                                           
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/op/{{ username }}">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

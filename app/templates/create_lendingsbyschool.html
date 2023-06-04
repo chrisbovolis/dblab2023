@@ -1,0 +1,50 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <form class="form-horizontal" name="year" method="POST">
+                <!-- hidden_tag returns the form's security metadata -->
+                {{ form.hidden_tag() }}
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.year.label(class = "form-label") }}
+                    <!-- Setting required to false disables the HTML attribute and leaves input validation to the backend -->
+                    {{ form.year(class = "form-control", placeholder = "Enter year", required = False) }}
+                    {% if form.year.errors %}
+                    <ul class = "errors">
+                        {% for error in form.year.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.month.label(class = "form-label") }}
+                    {{ form.month(class = "form-control", placeholder = "Enter month", required = False) }}
+                    {% if form.month.errors %}
+                    <ul class = "errors">
+                        {% for error in form.month.errors %}
+                        <li class = "text-danger">{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+
+                {{ form.submit(class = "btn btn-primary btn-submit-custom") }}
+            </form>
+    </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/centop">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+
+{% endblock content %}

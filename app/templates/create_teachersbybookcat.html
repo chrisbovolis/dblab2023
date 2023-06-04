@@ -1,0 +1,40 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <form class="form-horizontal" name="year" method="POST">
+                <!-- hidden_tag returns the form's security metadata -->
+                {{ form.hidden_tag() }}
+                <div class="form-group col-sm-3 mb-3">
+                    {{ form.categories.label(class="form-label") }}
+                    <select id="categories" name="categories" class="form-control" multiple>
+                      {% for category in form.categories.choices %}
+                      <option value="{{ category[0] }}">{{ category[1] }}</option>
+                      {% endfor %}
+                    </select>
+                    {% if form.categories.errors %}
+                    <ul class="errors">
+                      {% for error in form.categories.errors %}
+                      <li class="text-danger">{{ error }}</li>
+                      {% endfor %}
+                    </ul>
+                    {% endif %}
+                  </div>
+                {{ form.submit(class = "btn btn-primary btn-submit-custom") }}
+            </form>
+    </div>
+    </div>
+</div>
+<div style="margin-top: 20px; text-align: center;">
+  <div class="container">
+      <div class="row">
+          <div class="col-md-12">
+              <a class="btn btn-primary" href="/centop">Home</a>
+          </div>
+      </div>
+  </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}

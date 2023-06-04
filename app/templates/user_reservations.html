@@ -1,0 +1,98 @@
+{% extends "global_layout.html" %}
+{% block content %}
+<div class="container">
+    {% include "flash_messages.html" %}
+    <div class="row" id="row">
+        <div class="col-md-12">
+            <div class="card" id="card-container">
+                <div class="card-body" id="card">
+                {% if user_reservations|length == 0 %}
+                    <h1 style="margin-top: 5rem;">No Reservations found!</h1>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Start date</th>
+                                    <th>Due date</th>
+                                    <th>Reservation date</th>
+                                    <th>User ID</th>
+                                    <th>Book ID</th>
+                                    <th>Active?</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reservation in user_reservations %}
+                                    <tr>
+                                        <td> {{ reservation.resid }} </td>
+                                        <td> {{ reservation.start_date }} </td>
+                                        <td> {{ reservation.due_date }} </td>
+                                        <td> {{ reservation.reservation_date }} </td>
+                                        <td> {{ reservation.userid }} </td>
+                                        <td> {{ reservation.relid }} </td>
+                                        <td> {{ reservation.active }} </td>
+                                        <td>
+                                            <button style = "all: unset; cursor: pointer;" type = "button"
+                                            data-bs-toggle = "modal" data-bs-target = "#deleteModal"
+                                            data-resid = "{{ reservation.resid }}" onclick = "setDeleteModalFields(this)">
+                                                <i class = "fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Delete modal -->
+<div class = "modal fade" id="deleteModal">
+    <div class = "modal-dialog">
+        <div class = "modal-content">
+            <div class = "modal-header">
+                <h5 class = "modal-title" id = "deleteModalLabel">Delete reservation</h5>
+                <button type = "button" class = "btn-close" data-bs-dismiss = "modal" aria-label = "Close"></button>
+            </div>
+            <div class = "modal-body">
+                The reservation will be deleted. Are you sure? 
+            </div>
+            <div class = "modal-footer">
+                <button type = "button" class = "btn btn-secondary" data-bs-dismiss = "modal">Close</button>
+                <form id = "delete-modal-form">
+                    <input type = "submit" class = "btn btn-danger" value = "Delete">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+</script>
+
+<script>
+    function setDeleteModalFields(row) {
+        document.getElementById("delete-modal-form").action = "/user/reservations/delete/" + row.getAttribute("data-resid");
+        document.getElementById("delete-modal-form").method = "POST";
+    }
+</script>
+<div style="margin-top: 20px; text-align: center;">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="btn btn-primary" href="/user/{{userid}}">Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="margin-bottom: 20px;"></div>
+{% endblock content %}
